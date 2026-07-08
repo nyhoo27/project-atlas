@@ -61,7 +61,8 @@ export function UserMenu({
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => logout()}>
+        {/* Base UI menu items fire onClick (not Radix's onSelect) */}
+        <DropdownMenuItem onClick={() => logout()}>
           <LogOut className="size-4" />
           Log out
         </DropdownMenuItem>
