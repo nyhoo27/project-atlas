@@ -2,14 +2,13 @@ import { redirect } from "next/navigation"
 import { getCurrentContext } from "@/lib/queries/current"
 import { logout } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
+import { AppShell } from "@/components/layout/app-shell"
 
 /**
- * Guard for every authenticated /app route. The proxy already redirects
- * signed-out visitors, but this is the authoritative server-side check —
- * and the place that handles the "signed in but no workspace" edge case
- * with a friendly screen instead of a crash.
- *
- * The full app shell (sidebar, topbar) is added in Step 4.
+ * Guard + frame for every authenticated /app route. The proxy already
+ * redirects signed-out visitors, but this is the authoritative
+ * server-side check — and the place that handles the "signed in but no
+ * workspace" edge case with a friendly screen instead of a crash.
  */
 export default async function AppLayout({
   children,
@@ -38,5 +37,16 @@ export default async function AppLayout({
     )
   }
 
-  return <>{children}</>
+  const { workspace, profile, role } = result.context
+
+  return (
+    <AppShell
+      workspaceName={workspace.name}
+      userName={profile?.full_name ?? "Unknown"}
+      userEmail={profile?.email ?? ""}
+      role={role}
+    >
+      {children}
+    </AppShell>
+  )
 }
