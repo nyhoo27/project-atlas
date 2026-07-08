@@ -28,6 +28,17 @@ Once created, an `interactions` row cannot be edited — only archived (`archive
 
 **Why:** interactions are the source of truth for "what actually happened with this customer." If they could be silently edited after the fact, the activity history couldn't be trusted — which defeats the app's central business rule that every touchpoint gets logged. Making this a hard database-level constraint (not just a missing "edit" button in the UI) means it holds even if a future server action has a bug.
 
+## 004 — Owner-only hard delete for mistake records
+
+Archive-instead-of-delete remains the rule, with one deliberate exception: the workspace **Owner** may permanently delete a **customer that has zero logged interactions** — a record that was clearly created by mistake (typo, duplicate, test entry).
+
+Enforcement:
+
+1. RLS has **no DELETE policy** on business tables, so a regular session can never hard-delete anything, even by calling the database API directly.
+2. The `deleteCustomer` server action performs the role check (owner) and the no-interactions check, then deletes via the service-role client. The deletion itself is written to the activity log ("X permanently deleted customer Y").
+
+**Why:** a customer with logged interactions is history and must survive (archive it); a customer with none is pure noise, and letting the owner remove it keeps the workspace clean without weakening the audit trail.
+
 ## Future-proofing
 
 None of the above blocks adding, later:

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { customerSchema } from "@/lib/validators/customer"
 import { logActivity } from "@/lib/utils/activity"
@@ -9,6 +10,7 @@ import {
   canCreateCustomer,
   canEditCustomer,
   canArchive,
+  canDeleteCustomer,
   PERMISSION_ERROR,
 } from "@/lib/permissions"
 
@@ -219,6 +221,79 @@ export async function archiveCustomer(
 
   revalidatePath("/app/customers")
   revalidatePath(`/app/customers/${customerId}`)
+  revalidatePath("/app/dashboard")
+  return { ok: true, id: customerId }
+}
+
+/**
+ * Permanently deletes a customer created by mistake. Owner only, and
+ * only when the customer has no logged interactions — otherwise archive
+ * is the answer (history must survive).
+ *
+ * Uses the service-role client because RLS deliberately has no DELETE
+ * policy: regular sessions can never hard-delete, even by calling the
+ * database API directly. The role and no-interactions checks above are
+ * therefore the gate, and they run server-side only.
+ */
+export async function deleteCustomer(
+  customerId: string
+): Promise<CustomerActionResult> {
+  const context = await requireWorkspaceContext()
+  if (!canDeleteCustomer(context.role)) {
+    return {
+      ok: false,
+      error: "Only the workspace owner can permanently delete a customer.",
+    }
+  }
+
+  const admin = createAdminClient()
+
+  const { count: interactionCount } = await admin
+    .from("interactions")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", context.workspace.id)
+    .eq("customer_id", customerId)
+  if ((interactionCount ?? 0) > 0) {
+    return {
+      ok: false,
+      error:
+        "This customer has logged interactions and cannot be deleted. Archive it instead.",
+    }
+  }
+
+  const { data: deleted, error } = await admin
+    .from("customers")
+    .delete()
+    .eq("id", customerId)
+    .eq("workspace_id", context.workspace.id)
+    .select("name")
+    .maybeSingle()
+
+  if (error || !deleted) {
+    console.error("deleteCustomer failed:", error)
+    return { ok: false, error: "Customer could not be deleted. Please try again." }
+  }
+
+  // Remove the mistake record's own history, then log the deletion
+  // itself so the audit trail shows who removed it.
+  await admin
+    .from("activity_logs")
+    .delete()
+    .eq("workspace_id", context.workspace.id)
+    .eq("record_type", "customer")
+    .eq("record_id", customerId)
+
+  const supabase = await createClient()
+  await logActivity(supabase, {
+    workspaceId: context.workspace.id,
+    actorId: context.userId,
+    action: "customer.deleted",
+    recordType: "customer",
+    recordId: null,
+    description: `${context.profile?.full_name ?? "Someone"} permanently deleted customer ${deleted.name}`,
+  })
+
+  revalidatePath("/app/customers")
   revalidatePath("/app/dashboard")
   return { ok: true, id: customerId }
 }

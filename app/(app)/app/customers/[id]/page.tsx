@@ -8,7 +8,7 @@ import {
   getCustomerRelated,
 } from "@/lib/queries/customers"
 import { getWorkspaceMembers } from "@/lib/queries/members"
-import { canArchive, canEditCustomer } from "@/lib/permissions"
+import { canArchive, canDeleteCustomer, canEditCustomer } from "@/lib/permissions"
 import { formatDate, formatDateTime, formatRelative } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
 import { Timeline } from "@/components/timeline/timeline"
@@ -16,7 +16,10 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArchiveCustomerButton } from "@/components/customers/customer-actions"
+import {
+  ArchiveCustomerButton,
+  DeleteCustomerButton,
+} from "@/components/customers/customer-actions"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -88,6 +91,13 @@ export default async function CustomerDetailPage({
                 customerName={customer.name}
               />
             )}
+            {canDeleteCustomer(context.role) &&
+              related.interactions.length === 0 && (
+                <DeleteCustomerButton
+                  customerId={customer.id}
+                  customerName={customer.name}
+                />
+              )}
           </>
         }
       />

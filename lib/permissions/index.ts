@@ -22,6 +22,15 @@ export function canCreateCustomer(role: WorkspaceRole): boolean {
   return role !== "staff"
 }
 
+/**
+ * Hard delete is the exception to the archive-only rule: owners may
+ * permanently remove a customer created by mistake, and only when it
+ * has no logged interactions (history is never destroyed).
+ */
+export function canDeleteCustomer(role: WorkspaceRole): boolean {
+  return role === "owner"
+}
+
 export function canEditCustomer(role: WorkspaceRole): boolean {
   return role !== "staff"
 }
