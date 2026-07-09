@@ -631,6 +631,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_interaction_with_follow_up: {
+        Args: {
+          p_actor_name: string
+          p_customer_id?: string
+          p_direction?: string
+          p_follow_up_assigned_to?: string
+          p_interaction_at: string
+          p_item_id?: string
+          p_next_follow_up_at?: string
+          p_notes?: string
+          p_summary: string
+          p_type_option_id?: string
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
       is_workspace_member: {
         Args: { p_workspace_id: string }
         Returns: boolean
