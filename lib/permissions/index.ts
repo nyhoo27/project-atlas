@@ -52,6 +52,24 @@ export function canCreateTask(): boolean {
   return true
 }
 
+/**
+ * Tasks are edited/completed by managers, or by the people the task
+ * belongs to (its creator or assignee). Staff can complete tasks
+ * assigned to them, per the V1 role rules.
+ */
+export function canModifyTask(
+  role: WorkspaceRole,
+  userId: string,
+  task: { created_by: string | null; assigned_to: string | null }
+): boolean {
+  return (
+    role === "owner" ||
+    role === "manager" ||
+    task.created_by === userId ||
+    task.assigned_to === userId
+  )
+}
+
 /** Standard message returned by server actions on a failed role check. */
 export const PERMISSION_ERROR =
   "You do not have permission to do this. Ask your workspace owner or manager."
