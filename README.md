@@ -2,6 +2,18 @@
 
 **Atlas** is a flexible sales and business logging system for item-based businesses (car dealerships, phone shops, real estate agencies, furniture stores, machinery traders, and similar). It is not built around any single industry — see [docs/product-requirements.md](docs/product-requirements.md) for the full product vision.
 
+## V1 features
+
+- **Auth & workspaces** — signup creates the user, their workspace, an owner membership, and default settings in one atomic flow.
+- **Customers** — list with search/filters, detail page with timeline, duplicate-phone warning, archive (owner-only hard delete for mistake records with no history).
+- **Items** — anything the business sells; categories/statuses are configurable, prices shown in the workspace currency.
+- **Interactions** — the heart of the app; append-only log of every call, message, visit, and meeting. Setting a follow-up date atomically creates a follow-up task in the same database transaction.
+- **Tasks** — Overdue / Due Today / Upcoming / Completed sections, Mark Done, assignment.
+- **Dashboard** — stat cards, my tasks, recent customers/items/activity.
+- **Settings** — owner/manager configuration of all dropdown options, workspace info, and tags. Renames keep stable machine keys; defaults can't be deactivated; nothing is hard-deleted.
+- **Global search** — grouped `ilike` search across customers, items, tasks, and interactions.
+- **Roles** — owner / manager / salesperson / staff, enforced in server actions; RLS enforces workspace isolation.
+
 ## Tech stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
@@ -57,13 +69,23 @@ Auth users cannot be created with plain SQL. The seed script (`database/seed/see
 pnpm seed
 ```
 
+Seeded dev logins (password `Password123!` for all):
+
+| Role | Email |
+| --- | --- |
+| Owner | `owner@slktrading.test` |
+| Manager | `manager@slktrading.test` |
+| Salesperson | `salesperson@slktrading.test` |
+
+You can also create a fresh workspace any time through the signup page.
+
 ### 6. Run the dev server
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) and log in, or sign up to create a new workspace.
 
 ## Project structure
 

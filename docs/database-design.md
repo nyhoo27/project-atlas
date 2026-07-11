@@ -84,6 +84,13 @@ General shape of the policies (see `0005_rls.sql` for the full list):
 
 `workspaces` is the one exception to the "policy on `workspace_id` column" shape, since a workspace row's own `id` plays that role: policies use `is_workspace_member(id)`.
 
+## Database functions
+
+Beyond `is_workspace_member()` and `handle_new_user()` (described above), two functions carry business logic that must be transactional or shared:
+
+- **`seed_default_settings_options(p_workspace_id)`** — inserts the default categories, statuses, sources, types, and priorities for a new workspace. Called by the signup flow and the dev seed script, so both use one source of truth.
+- **`create_interaction_with_follow_up(...)`** (migration `0007`) — the atomic write behind "log interaction": inserts the interaction, its activity log, and — when a follow-up date is given — the follow-up task plus its activity log in **one transaction**. An interaction can never save while its follow-up task silently fails. It is `SECURITY INVOKER`, so RLS workspace isolation applies to every statement inside it. Optional parameters default to `null` so the generated TypeScript types mark them optional.
+
 ## Soft archive rule
 
 Customers, items, interactions, tasks, and settings_options are never hard-deleted from the app. Each has an `archived_at timestamptz` (or, for settings_options, an `is_active boolean`) that server actions set instead of running `DELETE`. Archived records:
@@ -93,3 +100,5 @@ Customers, items, interactions, tasks, and settings_options are never hard-delet
 - keep every foreign key relationship intact (so past interactions, tasks, and activity log entries referencing them still render correctly).
 
 No table has a DELETE RLS policy except `tags` and `record_tags`, which aren't business records subject to this rule.
+
+One deliberate exception: the workspace owner can permanently delete a **customer with zero logged interactions** (a record created by mistake). This runs through the service-role client after server-side checks — see Architecture Decision 004 in [architecture-decisions.md](architecture-decisions.md).
