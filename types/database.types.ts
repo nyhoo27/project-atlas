@@ -214,6 +214,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           category_option_id: string | null
+          cost_breakdown: Json
           cost_price: number | null
           created_at: string
           created_by: string | null
@@ -233,6 +234,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           category_option_id?: string | null
+          cost_breakdown?: Json
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
@@ -252,6 +254,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           category_option_id?: string | null
+          cost_breakdown?: Json
           cost_price?: number | null
           created_at?: string
           created_by?: string | null

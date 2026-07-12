@@ -26,13 +26,25 @@ function moneyOrNull(value: string): number | null {
 
 /** Form values -> database columns, shared by create and update. */
 function toItemRow(values: ItemValues) {
+  // With a breakdown, the total cost IS the sum of its rows — computed
+  // here on the server so the stored cost_price can never drift.
+  const breakdown = values.costBreakdown.map((component) => ({
+    label: component.label,
+    amount: Number(component.amount),
+  }))
+  const costPrice =
+    breakdown.length > 0
+      ? Math.round(breakdown.reduce((sum, c) => sum + c.amount, 0) * 100) / 100
+      : moneyOrNull(values.costPrice)
+
   return {
     name: values.name,
     reference_code: orNull(values.referenceCode),
     category_option_id: orNull(values.categoryOptionId),
     status_option_id: orNull(values.statusOptionId),
     description: orNull(values.description),
-    cost_price: moneyOrNull(values.costPrice),
+    cost_price: costPrice,
+    cost_breakdown: breakdown,
     selling_price: moneyOrNull(values.sellingPrice),
     quantity: parseInt(values.quantity, 10),
     location: orNull(values.location),

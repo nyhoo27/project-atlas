@@ -44,6 +44,10 @@ export default async function EditItemPage({
           statusOptionId: item.status_option_id ?? "",
           description: item.description ?? "",
           costPrice: item.cost_price != null ? String(item.cost_price) : "",
+          costBreakdown: item.cost_breakdown.map((component) => ({
+            label: component.label,
+            amount: String(component.amount),
+          })),
           sellingPrice:
             item.selling_price != null ? String(item.selling_price) : "",
           quantity: String(item.quantity),

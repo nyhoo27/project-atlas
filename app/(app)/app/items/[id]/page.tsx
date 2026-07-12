@@ -117,6 +117,18 @@ export default async function ItemDetailPage({
               </Field>
               <Field label="Cost price">
                 {formatCurrency(item.cost_price, currency)}
+                {item.cost_breakdown.length > 0 && (
+                  <span className="mt-1 block space-y-0.5 text-xs text-muted-foreground">
+                    {item.cost_breakdown.map((component, index) => (
+                      <span key={index} className="flex justify-between gap-4">
+                        <span>{component.label}</span>
+                        <span className="tabular-nums">
+                          {formatCurrency(component.amount, currency)}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                )}
               </Field>
               <Field label="Quantity">{item.quantity}</Field>
               <Field label="Location">{item.location ?? "—"}</Field>

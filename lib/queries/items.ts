@@ -60,12 +60,15 @@ export async function getItems(
   return (data ?? []) as ItemListRow[]
 }
 
+export type CostComponent = { label: string; amount: number }
+
 export type ItemDetail = {
   id: string
   name: string
   reference_code: string | null
   description: string | null
   cost_price: number | null
+  cost_breakdown: CostComponent[]
   selling_price: number | null
   quantity: number
   location: string | null
@@ -87,9 +90,9 @@ export async function getItemById(
   const { data } = await supabase
     .from("items")
     .select(
-      `id, name, reference_code, description, cost_price, selling_price,
-       quantity, location, notes, created_at, updated_at, archived_at,
-       category_option_id, status_option_id,
+      `id, name, reference_code, description, cost_price, cost_breakdown,
+       selling_price, quantity, location, notes, created_at, updated_at,
+       archived_at, category_option_id, status_option_id,
        category:settings_options!items_category_option_id_fkey(label, color),
        status:settings_options!items_status_option_id_fkey(label, color)`
     )

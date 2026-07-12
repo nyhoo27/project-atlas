@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema"
 import { toast } from "sonner"
+import { Plus, Trash2 } from "lucide-react"
 import { createItem, updateItem, type ItemActionResult } from "@/lib/actions/items"
 import { itemSchema, type ItemValues } from "@/lib/validators/item"
 import { Button } from "@/components/ui/button"
@@ -67,6 +68,7 @@ export function ItemForm({
       statusOptionId: "",
       description: "",
       costPrice: "",
+      costBreakdown: [],
       sellingPrice: "",
       quantity: "1",
       location: "",
@@ -74,6 +76,32 @@ export function ItemForm({
       ...defaultValues,
     },
   })
+
+  const breakdown = useFieldArray({
+    control: form.control,
+    name: "costBreakdown",
+  })
+
+  /**
+   * When breakdown rows exist, the cost price is their sum — recompute
+   * it and let the margin/selling logic follow, exactly as if the user
+   * had typed the total into the cost field.
+   */
+  function syncCostFromBreakdown() {
+    const rows = form.getValues("costBreakdown")
+    if (rows.length === 0) return
+    const total = rows.reduce((sum, row) => {
+      const amount = parseFloat(row.amount)
+      return sum + (Number.isFinite(amount) ? amount : 0)
+    }, 0)
+    const totalText = trimNumber(total)
+    form.setValue("costPrice", totalText, { shouldValidate: true })
+    if (margin !== "") {
+      recalcSellingPrice(totalText, margin)
+    } else {
+      recalcMargin(totalText, form.getValues("sellingPrice"))
+    }
+  }
 
   /** cost + margin% -> selling price */
   function recalcSellingPrice(costValue: string, marginValue: string) {
@@ -202,6 +230,7 @@ export function ItemForm({
                     inputMode="numeric"
                     placeholder="0"
                     {...field}
+                    disabled={breakdown.fields.length > 0}
                     onChange={(event) => {
                       field.onChange(event)
                       // A set margin drives the selling price; otherwise
@@ -217,6 +246,11 @@ export function ItemForm({
                     }}
                   />
                 </FormControl>
+                {breakdown.fields.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Calculated from the cost breakdown below.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -292,6 +326,80 @@ export function ItemForm({
               </FormItem>
             )}
           />
+        </div>
+
+        {/* Itemized costs: each row is a label + amount; the sum becomes
+            the cost price above. */}
+        <div className="space-y-3 rounded-md border p-4">
+          <div>
+            <p className="text-sm font-medium">Cost breakdown</p>
+            <p className="text-sm text-muted-foreground">
+              Optional. Split the cost into parts (manufacturing, shipping,
+              customs...) — they add up to the cost price automatically.
+            </p>
+          </div>
+          {breakdown.fields.map((row, index) => (
+            <div key={row.id} className="flex items-start gap-2">
+              <FormField
+                control={form.control}
+                name={`costBreakdown.${index}.label`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input placeholder="Shipping, manufacturing..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`costBreakdown.${index}.amount`}
+                render={({ field }) => (
+                  <FormItem className="w-40">
+                    <FormControl>
+                      <Input
+                        inputMode="numeric"
+                        placeholder="0"
+                        {...field}
+                        onChange={(event) => {
+                          field.onChange(event)
+                          syncCostFromBreakdown()
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="mt-0.5 text-destructive"
+                onClick={() => {
+                  breakdown.remove(index)
+                  // remove() updates the array synchronously; re-sum what's
+                  // left (or restore manual entry when the last row goes).
+                  if (form.getValues("costBreakdown").length > 0) {
+                    syncCostFromBreakdown()
+                  }
+                }}
+              >
+                <Trash2 className="size-4" />
+                <span className="sr-only">Remove cost row</span>
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => breakdown.append({ label: "", amount: "" })}
+          >
+            <Plus className="size-3.5" />
+            Add cost
+          </Button>
         </div>
 
         <FormField

@@ -19,6 +19,20 @@ const money = z
     "Enter a valid non-negative amount"
   )
 
+/** A required non-negative amount (cost breakdown rows must have one). */
+const requiredMoney = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,2})?$/, "Enter a valid non-negative amount")
+
+/** One line of the cost breakdown: "Shipping" + 200. */
+export const costComponentSchema = z.object({
+  label: z.string().trim().min(1, "Label is required").max(100),
+  amount: requiredMoney,
+})
+
+export type CostComponentValues = z.infer<typeof costComponentSchema>
+
 export const itemSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   referenceCode: optionalText(100),
@@ -26,6 +40,12 @@ export const itemSchema = z.object({
   statusOptionId: z.uuid().optional().or(z.literal("")),
   description: optionalText(5000),
   costPrice: money,
+  /**
+   * Optional itemized costs (manufacturing, shipping, ...). When any
+   * rows exist, the server sets cost_price to their sum — the manual
+   * cost field is ignored.
+   */
+  costBreakdown: z.array(costComponentSchema).max(20).default([]),
   sellingPrice: money,
   quantity: z
     .string()
