@@ -11,6 +11,7 @@
 - **Tasks** — Overdue / Due Today / Upcoming / Completed sections, Mark Done, assignment.
 - **Dashboard** — stat cards, my tasks, recent customers/items/activity.
 - **Settings** — owner/manager configuration of all dropdown options, workspace info, and tags. Renames keep stable machine keys; defaults can't be deactivated; nothing is hard-deleted.
+- **Members** — owners add teammates (creates their login + sets their role), change roles, and suspend/remove — no SQL required. The workspace always keeps at least one owner.
 - **Global search** — grouped `ilike` search across customers, items, tasks, and interactions.
 - **Roles** — owner / manager / salesperson / staff, enforced in server actions; RLS enforces workspace isolation.
 

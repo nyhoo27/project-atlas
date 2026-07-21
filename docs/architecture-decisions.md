@@ -39,6 +39,16 @@ Enforcement:
 
 **Why:** a customer with logged interactions is history and must survive (archive it); a customer with none is pure noise, and letting the owner remove it keeps the workspace clean without weakening the audit trail.
 
+## 005 — Members management: owner-only, initial-password provisioning
+
+Owners manage teammates from **Settings → Members** (a tab only owners see). Adding a member creates their login account via the Supabase Admin API — with the full name in user metadata, so the `handle_new_user` trigger fills in their profile — then inserts the `workspace_members` row. All of this runs in `lib/actions/members.ts` through the service-role client, because `workspace_members` has only a SELECT policy (no insert/update/delete for regular sessions).
+
+Provisioning uses an **initial password the owner sets and shares**, not an email invite: V1 has no email/SMTP configured, and an internal tool where the owner onboards staff directly is the simpler, working path. A self-service "change password" screen is a natural follow-up.
+
+Guards enforced in the actions: only owners can manage members; you cannot suspend or remove yourself; and a workspace can never lose its last active owner (demote/suspend/remove is blocked). Suspending flips `status` to `suspended`, which `is_workspace_member()` already treats as no-access. Removing deletes only the membership row — the person's login and any other workspaces are untouched.
+
+**Why owner-only:** membership is ownership-adjacent, and the spec says managers must not manage workspace ownership. Managers still configure options and tags; owners manage people.
+
 ## Future-proofing
 
 None of the above blocks adding, later:

@@ -2,12 +2,14 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getAllOptions, getTags } from "@/lib/queries/settings-manage"
-import { canManageSettings } from "@/lib/permissions"
+import { getAllWorkspaceMembers } from "@/lib/queries/members"
+import { canManageSettings, canManageMembers } from "@/lib/permissions"
 import { PageHeader } from "@/components/layout/page-header"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { WorkspaceInfoForm } from "@/components/settings/workspace-info-form"
 import { SettingsOptionManager } from "@/components/settings/settings-option-manager"
 import { TagsManager } from "@/components/settings/tags-manager"
+import { MembersManager } from "@/components/settings/members-manager"
 
 export const metadata: Metadata = {
   title: "Settings — Atlas",
@@ -31,13 +33,15 @@ export default async function SettingsPage() {
     redirect("/app/dashboard")
   }
 
-  const [optionSets, tags] = await Promise.all([
+  const showMembers = canManageMembers(context.role)
+  const [optionSets, tags, members] = await Promise.all([
     Promise.all(
       OPTION_SECTIONS.map((section) =>
         getAllOptions(context.workspace.id, section.type)
       )
     ),
     getTags(context.workspace.id),
+    showMembers ? getAllWorkspaceMembers(context.workspace.id) : Promise.resolve([]),
   ])
 
   return (
@@ -56,6 +60,7 @@ export default async function SettingsPage() {
             </TabsTrigger>
           ))}
           <TabsTrigger value="tags">Tags</TabsTrigger>
+          {showMembers && <TabsTrigger value="members">Members</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="workspace" className="mt-4">
@@ -81,6 +86,12 @@ export default async function SettingsPage() {
         <TabsContent value="tags" className="mt-4">
           <TagsManager tags={tags} />
         </TabsContent>
+
+        {showMembers && (
+          <TabsContent value="members" className="mt-4">
+            <MembersManager members={members} currentUserId={context.userId} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

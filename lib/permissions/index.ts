@@ -14,6 +14,15 @@ export function canManageSettings(role: WorkspaceRole): boolean {
   return role === "owner" || role === "manager"
 }
 
+/**
+ * Adding, removing, and re-roling teammates is owner-only — it is
+ * ownership-adjacent, and the spec says managers must not manage
+ * workspace ownership. Managers configure options and tags, not people.
+ */
+export function canManageMembers(role: WorkspaceRole): boolean {
+  return role === "owner"
+}
+
 export function canArchive(role: WorkspaceRole): boolean {
   return role === "owner" || role === "manager"
 }
