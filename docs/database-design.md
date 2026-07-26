@@ -38,6 +38,10 @@ Every logged customer touchpoint (call, message, visit, meeting, complaint, ...)
 
 Follow-ups and internal work. May be created manually or auto-created from an interaction's `next_follow_up_at` (in which case `interaction_id` links back to it). Linked to `status_option_id` / `priority_option_id`, and optionally `customer_id` / `item_id`. `completed_at` is set when status moves to Done.
 
+### sales (V2)
+
+A record that an item was sold: links to `customer_id` and `item_id` (both `on delete set null`), a `sold_by` user, a configurable `status_option_id` (the `sale_status` option type — Completed / Pending / Refunded / Cancelled, added to the seed function in `0009_sales.sql`), `sale_price` and `quantity`, and a **`cost_price` snapshot** captured at sale time. The snapshot is why profit stays fixed: editing the item's cost later never rewrites the margin of a sale that already happened. Soft-archived via `archived_at`; no delete policy. RLS is the standard `is_workspace_member` select/insert/update. Who may create/edit is enforced in server actions (`canCreateSale` = non-staff; `canModifySale` = owner/manager or the sale's creator/seller).
+
 ### activity_logs
 
 Human-readable history feed (`"Mg Mg logged a WhatsApp Message with Ko Aung"`) shown on the dashboard and on customer/item timelines. Written **server-side only** — server actions and database functions insert rows; there is no path for client code to write one. Append-only: select + insert policies only, no update/delete.

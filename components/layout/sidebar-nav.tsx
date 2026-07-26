@@ -8,6 +8,7 @@ import {
   Package,
   MessagesSquare,
   CheckSquare,
+  Receipt,
   Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/app/customers", label: "Customers", icon: Users },
   { href: "/app/items", label: "Items", icon: Package },
   { href: "/app/interactions", label: "Interactions", icon: MessagesSquare },
+  { href: "/app/sales", label: "Sales", icon: Receipt },
   { href: "/app/tasks", label: "Tasks", icon: CheckSquare },
   // Settings is Owner/Manager only — filtered below. Hiding the link is
   // cosmetic; the real check lives in the settings server actions.

@@ -16,6 +16,7 @@ export type OptionType =
   | "interaction_type"
   | "task_status"
   | "task_priority"
+  | "sale_status"
 
 /**
  * Active dropdown options of one type, in display order. Deactivated

@@ -8,6 +8,7 @@
 - **Customers** — list with search/filters, detail page with timeline, duplicate-phone warning, archive (owner-only hard delete for mistake records with no history).
 - **Items** — anything the business sells; categories/statuses are configurable, prices shown in the workspace currency.
 - **Interactions** — the heart of the app; append-only log of every call, message, visit, and meeting. Setting a follow-up date atomically creates a follow-up task in the same database transaction.
+- **Sales (V2)** — record what was sold, to whom, when, for how much, and by whom. Each sale snapshots the item's cost at sale time, so profit stays fixed even if the item's cost is edited later. Sales show on customer and item pages; the dashboard shows this month's sales, revenue, and profit.
 - **Tasks** — Overdue / Due Today / Upcoming / Completed sections, Mark Done, assignment.
 - **Dashboard** — stat cards, my tasks, recent customers/items/activity.
 - **Settings** — owner/manager configuration of all dropdown options, workspace info, and tags. Renames keep stable machine keys; defaults can't be deactivated; nothing is hard-deleted.

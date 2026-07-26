@@ -5,7 +5,13 @@ import { Pencil, MessagesSquare, Plus } from "lucide-react"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getItemById, getItemRelated } from "@/lib/queries/items"
 import { getWorkspaceMembers } from "@/lib/queries/members"
-import { canArchive, canEditItem } from "@/lib/permissions"
+import { getSalesByItem, type SaleListRow } from "@/lib/queries/sales"
+import {
+  canArchive,
+  canCreateSale,
+  canEditItem,
+  canModifySale,
+} from "@/lib/permissions"
 import {
   formatCurrency,
   formatDate,
@@ -19,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArchiveItemButton } from "@/components/items/item-actions"
+import { SalesTable } from "@/components/sales/sales-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -46,9 +53,10 @@ export default async function ItemDetailPage({
   const item = await getItemById(context.workspace.id, id)
   if (!item) notFound()
 
-  const [related, members] = await Promise.all([
+  const [related, members, sales] = await Promise.all([
     getItemRelated(context.workspace.id, id),
     getWorkspaceMembers(context.workspace.id),
+    getSalesByItem(context.workspace.id, id),
   ])
   const memberName = new Map(members.map((m) => [m.userId, m.fullName]))
 
@@ -70,6 +78,15 @@ export default async function ItemDetailPage({
               <Plus className="size-4" />
               Add Task
             </Button>
+            {canCreateSale(context.role) && (
+              <Button
+                variant="outline"
+                render={<Link href={`/app/sales/new?item=${item.id}`} />}
+              >
+                <Plus className="size-4" />
+                Record Sale
+              </Button>
+            )}
             {canEditItem(context.role) && (
               <Button
                 variant="outline"
@@ -107,6 +124,7 @@ export default async function ItemDetailPage({
             Interested Customers ({related.interestedCustomers.length})
           </TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({related.tasks.length})</TabsTrigger>
+          <TabsTrigger value="sales">Sales ({sales.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -285,6 +303,27 @@ export default async function ItemDetailPage({
                 </TableBody>
               </Table>
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sales" className="mt-4">
+          {sales.length === 0 ? (
+            <EmptyState message="No sales of this item yet." />
+          ) : (
+            <SalesTable
+              sales={sales}
+              currency={currency}
+              timezone={timezone}
+              memberName={memberName}
+              showItem={false}
+              canEdit={(sale: SaleListRow) =>
+                canModifySale(context.role, context.userId, {
+                  created_by: null,
+                  sold_by: sale.sold_by,
+                })
+              }
+              canArchive={canArchive(context.role)}
+            />
           )}
         </TabsContent>
       </Tabs>

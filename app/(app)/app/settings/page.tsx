@@ -22,6 +22,7 @@ const OPTION_SECTIONS = [
   { type: "interaction_type", tab: "interaction-types", label: "Interaction Types", singular: "Type" },
   { type: "task_status", tab: "task-statuses", label: "Task Statuses", singular: "Status" },
   { type: "task_priority", tab: "priorities", label: "Task Priorities", singular: "Priority" },
+  { type: "sale_status", tab: "sale-statuses", label: "Sale Statuses", singular: "Status" },
 ] as const
 
 export default async function SettingsPage() {

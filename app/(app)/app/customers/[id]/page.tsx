@@ -8,10 +8,18 @@ import {
   getCustomerRelated,
 } from "@/lib/queries/customers"
 import { getWorkspaceMembers } from "@/lib/queries/members"
-import { canArchive, canDeleteCustomer, canEditCustomer } from "@/lib/permissions"
+import { getSalesByCustomer, type SaleListRow } from "@/lib/queries/sales"
+import {
+  canArchive,
+  canCreateSale,
+  canDeleteCustomer,
+  canEditCustomer,
+  canModifySale,
+} from "@/lib/permissions"
 import { formatDate, formatDateTime, formatRelative } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
 import { Timeline } from "@/components/timeline/timeline"
+import { SalesTable } from "@/components/sales/sales-table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,11 +54,13 @@ export default async function CustomerDetailPage({
   const customer = await getCustomerById(context.workspace.id, id)
   if (!customer) notFound()
 
-  const [related, members] = await Promise.all([
+  const [related, members, sales] = await Promise.all([
     getCustomerRelated(context.workspace.id, id),
     getWorkspaceMembers(context.workspace.id),
+    getSalesByCustomer(context.workspace.id, id),
   ])
   const memberName = new Map(members.map((m) => [m.userId, m.fullName]))
+  const currency = context.workspace.currency ?? "MMK"
 
   return (
     <div>
@@ -76,6 +86,15 @@ export default async function CustomerDetailPage({
               <Plus className="size-4" />
               Add Task
             </Button>
+            {canCreateSale(context.role) && (
+              <Button
+                variant="outline"
+                render={<Link href={`/app/sales/new?customer=${customer.id}`} />}
+              >
+                <Plus className="size-4" />
+                Record Sale
+              </Button>
+            )}
             {canEditCustomer(context.role) && (
               <Button
                 variant="outline"
@@ -116,6 +135,7 @@ export default async function CustomerDetailPage({
             Interactions ({related.interactions.length})
           </TabsTrigger>
           <TabsTrigger value="tasks">Tasks ({related.tasks.length})</TabsTrigger>
+          <TabsTrigger value="sales">Sales ({sales.length})</TabsTrigger>
           <TabsTrigger value="items">
             Linked Items ({related.linkedItems.length})
           </TabsTrigger>
@@ -279,6 +299,27 @@ export default async function CustomerDetailPage({
                 </TableBody>
               </Table>
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="sales" className="mt-4">
+          {sales.length === 0 ? (
+            <EmptyState message="No sales for this customer yet." />
+          ) : (
+            <SalesTable
+              sales={sales}
+              currency={currency}
+              timezone={timezone}
+              memberName={memberName}
+              showCustomer={false}
+              canEdit={(sale: SaleListRow) =>
+                canModifySale(context.role, context.userId, {
+                  created_by: null,
+                  sold_by: sale.sold_by,
+                })
+              }
+              canArchive={canArchive(context.role)}
+            />
           )}
         </TabsContent>
 

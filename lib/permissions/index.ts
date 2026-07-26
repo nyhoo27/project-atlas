@@ -52,6 +52,29 @@ export function canEditItem(role: WorkspaceRole): boolean {
   return role === "owner" || role === "manager"
 }
 
+/**
+ * Salespeople sell things, so any non-staff role can record a sale.
+ * Editing a sale is limited to owner/manager or the person who recorded
+ * it or made it (financial records deserve some protection); archiving
+ * is owner/manager (via canArchive).
+ */
+export function canCreateSale(role: WorkspaceRole): boolean {
+  return role !== "staff"
+}
+
+export function canModifySale(
+  role: WorkspaceRole,
+  userId: string,
+  sale: { created_by: string | null; sold_by: string | null }
+): boolean {
+  return (
+    role === "owner" ||
+    role === "manager" ||
+    sale.created_by === userId ||
+    sale.sold_by === userId
+  )
+}
+
 /** Every role exists to log interactions — the heart of the app. */
 export function canCreateInteraction(): boolean {
   return true

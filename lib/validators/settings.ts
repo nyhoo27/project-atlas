@@ -36,6 +36,7 @@ export const OPTION_TYPES = [
   "interaction_type",
   "task_status",
   "task_priority",
+  "sale_status",
 ] as const
 
 export const tagNameSchema = z.object({

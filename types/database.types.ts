@@ -367,6 +367,92 @@ export type Database = {
           },
         ]
       }
+      sales: {
+        Row: {
+          archived_at: string | null
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          item_id: string | null
+          notes: string | null
+          quantity: number
+          sale_price: number
+          sold_at: string
+          sold_by: string | null
+          status_option_id: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          sale_price: number
+          sold_at?: string
+          sold_by?: string | null
+          status_option_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          item_id?: string | null
+          notes?: string | null
+          quantity?: number
+          sale_price?: number
+          sold_at?: string
+          sold_by?: string | null
+          status_option_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_status_option_id_fkey"
+            columns: ["status_option_id"]
+            isOneToOne: false
+            referencedRelation: "settings_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings_options: {
         Row: {
           color: string | null
