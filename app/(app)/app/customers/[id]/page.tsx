@@ -15,6 +15,7 @@ import {
   canDeleteCustomer,
   canEditCustomer,
   canModifySale,
+  canViewFinancials,
 } from "@/lib/permissions"
 import { formatDate, formatDateTime, formatRelative } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
@@ -312,6 +313,7 @@ export default async function CustomerDetailPage({
               timezone={timezone}
               memberName={memberName}
               showCustomer={false}
+              showProfit={canViewFinancials(context.role)}
               canEdit={(sale: SaleListRow) =>
                 canModifySale(context.role, context.userId, {
                   created_by: null,

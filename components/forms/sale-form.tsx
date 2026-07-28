@@ -54,6 +54,7 @@ export function SaleForm({
   members,
   existingCostPrice,
   originalItemId,
+  showFinancials = false,
 }: {
   mode: "create" | "edit"
   saleId?: string
@@ -67,6 +68,12 @@ export function SaleForm({
   existingCostPrice?: number | null
   /** Edit mode: the item the sale was recorded against. */
   originalItemId?: string
+  /**
+   * Owner-only (canViewFinancials). When false the caller also strips
+   * costs out of `items` and `existingCostPrice`, so no cost figure is
+   * sent to the browser at all — not just hidden on screen.
+   */
+  showFinancials?: boolean
 }) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -267,8 +274,8 @@ export function SaleForm({
           />
         </div>
 
-        {/* Live totals. Profit uses the item's cost price — set it on the
-            item, not here. */}
+        {/* Live totals. Profit is owner-only and uses the item's cost
+            price — set that on the item, not here. */}
         <div className="space-y-1 rounded-md border bg-muted/40 px-4 py-3 text-sm">
           <div className="flex flex-wrap gap-6">
             <div>
@@ -277,18 +284,22 @@ export function SaleForm({
                 {formatCurrency(total, currency)}
               </span>
             </div>
-            <div>
-              <span className="text-muted-foreground">Profit: </span>
-              <span className="font-semibold tabular-nums">
-                {effectiveCost != null ? formatCurrency(profit, currency) : "—"}
-              </span>
-            </div>
+            {showFinancials && (
+              <div>
+                <span className="text-muted-foreground">Profit: </span>
+                <span className="font-semibold tabular-nums">
+                  {effectiveCost != null ? formatCurrency(profit, currency) : "—"}
+                </span>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {effectiveCost != null
-              ? `Profit uses the item's cost price of ${formatCurrency(effectiveCost, currency)} per unit.`
-              : "Set a cost price on the item to see profit."}
-          </p>
+          {showFinancials && (
+            <p className="text-xs text-muted-foreground">
+              {effectiveCost != null
+                ? `Profit uses the item's cost price of ${formatCurrency(effectiveCost, currency)} per unit.`
+                : "Set a cost price on the item to see profit."}
+            </p>
+          )}
         </div>
 
         <FormField

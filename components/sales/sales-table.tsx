@@ -24,6 +24,7 @@ export function SalesTable({
   memberName,
   showCustomer = true,
   showItem = true,
+  showProfit = false,
   canEdit,
   canArchive,
 }: {
@@ -33,6 +34,8 @@ export function SalesTable({
   memberName: Map<string, string>
   showCustomer?: boolean
   showItem?: boolean
+  /** Profit is owner-only — see canViewFinancials. */
+  showProfit?: boolean
   canEdit: (sale: SaleListRow) => boolean
   canArchive: boolean
 }) {
@@ -47,7 +50,7 @@ export function SalesTable({
             <TableHead>Sold By</TableHead>
             <TableHead className="text-right">Qty</TableHead>
             <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Profit</TableHead>
+            {showProfit && <TableHead className="text-right">Profit</TableHead>}
             <TableHead>Status</TableHead>
             <TableHead className="w-12" />
           </TableRow>
@@ -102,9 +105,11 @@ export function SalesTable({
                 <TableCell className="text-right tabular-nums">
                   {formatCurrency(total, currency)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {sale.cost_price != null ? formatCurrency(profit, currency) : "—"}
-                </TableCell>
+                {showProfit && (
+                  <TableCell className="text-right tabular-nums">
+                    {sale.cost_price != null ? formatCurrency(profit, currency) : "—"}
+                  </TableCell>
+                )}
                 <TableCell>
                   {sale.status ? <Badge variant="secondary">{sale.status.label}</Badge> : "—"}
                 </TableCell>

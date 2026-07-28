@@ -53,6 +53,25 @@ export function canEditItem(role: WorkspaceRole): boolean {
 }
 
 /**
+ * Money the business makes — profit, margins, and aggregate revenue —
+ * is owner-only. Salespeople record sales and see what the customer
+ * pays, but not what the business earns on them.
+ */
+export function canViewFinancials(role: WorkspaceRole): boolean {
+  return role === "owner"
+}
+
+/**
+ * An item's cost price. Owner and manager, because managers create and
+ * edit items and therefore have to set costs. Salespeople and staff
+ * never see cost — otherwise hiding profit elsewhere would be pointless,
+ * since cost plus the sale price gives the margin away.
+ */
+export function canViewItemCost(role: WorkspaceRole): boolean {
+  return role === "owner" || role === "manager"
+}
+
+/**
  * Salespeople sell things, so any non-staff role can record a sale.
  * Editing a sale is limited to owner/manager or the person who recorded
  * it or made it (financial records deserve some protection); archiving

@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getSaleById } from "@/lib/queries/sales"
 import { getWorkspaceMembers } from "@/lib/queries/members"
-import { canArchive, canModifySale } from "@/lib/permissions"
+import { canArchive, canModifySale, canViewFinancials } from "@/lib/permissions"
 import {
   formatCurrency,
   formatDateTime,
@@ -42,6 +42,7 @@ export default async function SaleDetailPage({
     (Number(sale.sale_price) - (sale.cost_price != null ? Number(sale.cost_price) : 0)) *
     sale.quantity
   const canEdit = canModifySale(context.role, context.userId, sale)
+  const showFinancials = canViewFinancials(context.role)
 
   return (
     <div>
@@ -94,20 +95,27 @@ export default async function SaleDetailPage({
           <Field label="Sale price (per unit)">
             {formatCurrency(Number(sale.sale_price), currency)}
           </Field>
-          <Field label="Cost price (per unit)">
-            {sale.cost_price != null ? formatCurrency(Number(sale.cost_price), currency) : "—"}
-          </Field>
+          {/* Cost and profit are owner-only (canViewFinancials). */}
+          {showFinancials && (
+            <Field label="Cost price (per unit)">
+              {sale.cost_price != null
+                ? formatCurrency(Number(sale.cost_price), currency)
+                : "—"}
+            </Field>
+          )}
           <Field label="Quantity">{sale.quantity}</Field>
           <Field label="Total">
             <span className="font-semibold">{formatCurrency(total, currency)}</span>
           </Field>
-          <Field label="Profit">
-            {sale.cost_price != null ? (
-              <span className="font-semibold">{formatCurrency(profit, currency)}</span>
-            ) : (
-              "—"
-            )}
-          </Field>
+          {showFinancials && (
+            <Field label="Profit">
+              {sale.cost_price != null ? (
+                <span className="font-semibold">{formatCurrency(profit, currency)}</span>
+              ) : (
+                "—"
+              )}
+            </Field>
+          )}
           <Field label="Sold by">
             {sale.sold_by ? (memberName.get(sale.sold_by) ?? "Unknown") : "—"}
           </Field>

@@ -6,7 +6,12 @@ import { getSales, type SaleListRow } from "@/lib/queries/sales"
 import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { getCustomerOptions, getItemOptions } from "@/lib/queries/interactions"
-import { canArchive, canCreateSale, canModifySale } from "@/lib/permissions"
+import {
+  canArchive,
+  canCreateSale,
+  canModifySale,
+  canViewFinancials,
+} from "@/lib/permissions"
 import { formatCurrency } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -50,6 +55,7 @@ export default async function SalesPage({
   ])
 
   const memberName = new Map(members.map((m) => [m.userId, m.fullName]))
+  const showFinancials = canViewFinancials(context.role)
   const hasFilters = Boolean(
     customerFilter || itemFilter || soldByFilter || statusFilter || showArchived
   )
@@ -157,24 +163,30 @@ export default async function SalesPage({
           <div className="mb-3 flex flex-wrap gap-6 text-sm">
             <div>
               <span className="text-muted-foreground">
-                {sales.length} sale{sales.length === 1 ? "" : "s"} · Revenue:{" "}
+                {sales.length} sale{sales.length === 1 ? "" : "s"}
+                {showFinancials ? " · Revenue: " : ""}
               </span>
-              <span className="font-semibold tabular-nums">
-                {formatCurrency(totalRevenue, currency)}
-              </span>
+              {showFinancials && (
+                <span className="font-semibold tabular-nums">
+                  {formatCurrency(totalRevenue, currency)}
+                </span>
+              )}
             </div>
-            <div>
-              <span className="text-muted-foreground">Profit: </span>
-              <span className="font-semibold tabular-nums">
-                {formatCurrency(totalProfit, currency)}
-              </span>
-            </div>
+            {showFinancials && (
+              <div>
+                <span className="text-muted-foreground">Profit: </span>
+                <span className="font-semibold tabular-nums">
+                  {formatCurrency(totalProfit, currency)}
+                </span>
+              </div>
+            )}
           </div>
           <SalesTable
             sales={sales}
             currency={currency}
             timezone={timezone}
             memberName={memberName}
+            showProfit={showFinancials}
             canEdit={(sale: SaleListRow) =>
               canModifySale(context.role, context.userId, {
                 created_by: null,

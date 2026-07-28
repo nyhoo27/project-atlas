@@ -5,7 +5,7 @@ import { getSaleById, getItemOptionsWithPrices } from "@/lib/queries/sales"
 import { getCustomerOptions } from "@/lib/queries/interactions"
 import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
-import { canModifySale } from "@/lib/permissions"
+import { canModifySale, canViewFinancials } from "@/lib/permissions"
 import { formatDateTime } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
 import { SaleForm } from "@/components/forms/sale-form"
@@ -35,6 +35,13 @@ export default async function EditSalePage({
     getWorkspaceMembers(context.workspace.id),
   ])
 
+  // Costs are owner-only and this form is a client component — strip
+  // them so they never reach a salesperson's browser.
+  const showFinancials = canViewFinancials(context.role)
+  const itemOptions = showFinancials
+    ? items
+    : items.map((item) => ({ id: item.id, name: item.name, sellingPrice: item.sellingPrice }))
+
   return (
     <div>
       <PageHeader title={`Edit Sale — ${formatDateTime(sale.sold_at, context.workspace.timezone ?? "Asia/Yangon")}`} />
@@ -54,11 +61,14 @@ export default async function EditSalePage({
           notes: sale.notes ?? "",
         }}
         customers={customers}
-        items={items}
+        items={itemOptions}
         statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
         members={members.map((m) => ({ userId: m.userId, fullName: m.fullName }))}
-        existingCostPrice={sale.cost_price != null ? Number(sale.cost_price) : null}
+        existingCostPrice={
+          showFinancials && sale.cost_price != null ? Number(sale.cost_price) : null
+        }
         originalItemId={sale.item_id ?? ""}
+        showFinancials={showFinancials}
       />
     </div>
   )

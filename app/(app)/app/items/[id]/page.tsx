@@ -11,6 +11,8 @@ import {
   canCreateSale,
   canEditItem,
   canModifySale,
+  canViewFinancials,
+  canViewItemCost,
 } from "@/lib/permissions"
 import {
   formatCurrency,
@@ -133,6 +135,9 @@ export default async function ItemDetailPage({
               <Field label="Selling price">
                 {formatCurrency(item.selling_price, currency)}
               </Field>
+              {/* Cost and its breakdown are hidden from salespeople and
+                  staff — otherwise the margin is trivially derivable. */}
+              {canViewItemCost(context.role) && (
               <Field label="Cost price">
                 {formatCurrency(item.cost_price, currency)}
                 {item.cost_breakdown.length > 0 && (
@@ -148,6 +153,7 @@ export default async function ItemDetailPage({
                   </span>
                 )}
               </Field>
+              )}
               <Field label="Quantity">{item.quantity}</Field>
               <Field label="Location">{item.location ?? "—"}</Field>
               <Field label="Created">
@@ -316,6 +322,7 @@ export default async function ItemDetailPage({
               timezone={timezone}
               memberName={memberName}
               showItem={false}
+              showProfit={canViewFinancials(context.role)}
               canEdit={(sale: SaleListRow) =>
                 canModifySale(context.role, context.userId, {
                   created_by: null,

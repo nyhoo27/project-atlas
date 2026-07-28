@@ -10,6 +10,7 @@ import {
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getDashboardData, type DashboardTask } from "@/lib/queries/dashboard"
 import { getSalesSummary } from "@/lib/queries/sales"
+import { canViewFinancials } from "@/lib/permissions"
 import {
   formatCurrency,
   formatDateTime,
@@ -32,12 +33,17 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const { userId, profile, workspace } = await requireWorkspaceContext()
+  const { userId, profile, workspace, role } = await requireWorkspaceContext()
   const timezone = workspace.timezone ?? "Asia/Yangon"
   const currency = workspace.currency ?? "MMK"
+  // Revenue and profit are owner-only, so they are never even fetched
+  // for anyone else — the figures never reach the page.
+  const showFinancials = canViewFinancials(role)
   const [data, salesSummary] = await Promise.all([
     getDashboardData(workspace.id, userId, timezone),
-    getSalesSummary(workspace.id, timezone),
+    showFinancials
+      ? getSalesSummary(workspace.id, timezone)
+      : Promise.resolve(null),
   ])
 
   return (
@@ -76,37 +82,39 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* This month's sales */}
-      <Link href="/app/sales" className="block">
-        <Card className="transition-colors hover:bg-accent/50">
-          <CardContent className="flex flex-wrap items-center gap-x-10 gap-y-3 p-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Sales this month
-              </p>
-              <p className="text-xl font-semibold tabular-nums">
-                {salesSummary.monthCount}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Revenue this month
-              </p>
-              <p className="text-xl font-semibold tabular-nums">
-                {formatCurrency(salesSummary.monthRevenue, currency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Profit this month
-              </p>
-              <p className="text-xl font-semibold tabular-nums">
-                {formatCurrency(salesSummary.monthProfit, currency)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
+      {/* This month's sales — owner only */}
+      {salesSummary && (
+        <Link href="/app/sales" className="block">
+          <Card className="transition-colors hover:bg-accent/50">
+            <CardContent className="flex flex-wrap items-center gap-x-10 gap-y-3 p-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Sales this month
+                </p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {salesSummary.monthCount}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Revenue this month
+                </p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {formatCurrency(salesSummary.monthRevenue, currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Profit this month
+                </p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {formatCurrency(salesSummary.monthProfit, currency)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       {/* Sections */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

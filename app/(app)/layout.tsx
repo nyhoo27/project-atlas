@@ -31,7 +31,12 @@ export default async function AppLayout({
           sign up again to create a new workspace.
         </p>
         <form action={logout}>
-          <Button variant="outline">Log out</Button>
+          {/* type="submit" is required: the Base UI Button defaults to
+              type="button", which would never submit this form and would
+              leave a user without a workspace unable to log out. */}
+          <Button type="submit" variant="outline">
+            Log out
+          </Button>
         </form>
       </div>
     )
