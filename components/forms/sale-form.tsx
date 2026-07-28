@@ -52,6 +52,8 @@ export function SaleForm({
   items,
   statuses,
   members,
+  existingCostPrice,
+  originalItemId,
 }: {
   mode: "create" | "edit"
   saleId?: string
@@ -61,6 +63,10 @@ export function SaleForm({
   items: NamedOption[]
   statuses: Option[]
   members: MemberOption[]
+  /** Edit mode: the cost snapshot already stored on this sale. */
+  existingCostPrice?: number | null
+  /** Edit mode: the item the sale was recorded against. */
+  originalItemId?: string
 }) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -73,7 +79,6 @@ export function SaleForm({
       soldBy: "",
       statusOptionId: "",
       salePrice: "",
-      costPrice: "",
       quantity: "1",
       notes: "",
       ...defaultValues,
@@ -83,12 +88,18 @@ export function SaleForm({
     },
   })
 
-  // Live totals.
+  // Live totals. Cost is never typed here — it comes from the item (or,
+  // when editing, from the snapshot already stored on this sale).
   const salePrice = parseFloat(form.watch("salePrice")) || 0
-  const costPrice = parseFloat(form.watch("costPrice")) || 0
   const quantity = parseInt(form.watch("quantity"), 10) || 0
+  const selectedItemId = form.watch("itemId")
+  const itemCost = items.find((i) => i.id === selectedItemId)?.costPrice ?? null
+  const effectiveCost =
+    mode === "edit" && selectedItemId === (originalItemId ?? "")
+      ? (existingCostPrice ?? null)
+      : itemCost
   const total = salePrice * quantity
-  const profit = (salePrice - costPrice) * quantity
+  const profit = (salePrice - (effectiveCost ?? 0)) * quantity
 
   async function onSubmit(values: SaleValues) {
     setServerError(null)
@@ -107,17 +118,14 @@ export function SaleForm({
     }
   }
 
-  // When an item is picked in create mode, prefill sale price from its
-  // selling price and cost from its cost price (both editable).
+  // Picking an item in create mode prefills the sale price from its
+  // selling price (still editable — you may sell above or below list).
   function onItemChange(itemId: string) {
     if (mode !== "create") return
     const item = items.find((i) => i.id === itemId)
     if (!item) return
     if (item.sellingPrice != null && !form.getValues("salePrice")) {
       form.setValue("salePrice", String(item.sellingPrice))
-    }
-    if (item.costPrice != null && !form.getValues("costPrice")) {
-      form.setValue("costPrice", String(item.costPrice))
     }
   }
 
@@ -193,22 +201,6 @@ export function SaleForm({
           />
           <FormField
             control={form.control}
-            name="costPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cost price ({currency})</FormLabel>
-                <FormControl>
-                  <Input inputMode="numeric" placeholder="0" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Snapshot for profit. Defaults from the item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="quantity"
             render={({ field }) => (
               <FormItem>
@@ -275,20 +267,28 @@ export function SaleForm({
           />
         </div>
 
-        {/* Live totals */}
-        <div className="flex flex-wrap gap-6 rounded-md border bg-muted/40 px-4 py-3 text-sm">
-          <div>
-            <span className="text-muted-foreground">Total: </span>
-            <span className="font-semibold tabular-nums">
-              {formatCurrency(total, currency)}
-            </span>
+        {/* Live totals. Profit uses the item's cost price — set it on the
+            item, not here. */}
+        <div className="space-y-1 rounded-md border bg-muted/40 px-4 py-3 text-sm">
+          <div className="flex flex-wrap gap-6">
+            <div>
+              <span className="text-muted-foreground">Total: </span>
+              <span className="font-semibold tabular-nums">
+                {formatCurrency(total, currency)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Profit: </span>
+              <span className="font-semibold tabular-nums">
+                {effectiveCost != null ? formatCurrency(profit, currency) : "—"}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-muted-foreground">Profit: </span>
-            <span className="font-semibold tabular-nums">
-              {formatCurrency(profit, currency)}
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            {effectiveCost != null
+              ? `Profit uses the item's cost price of ${formatCurrency(effectiveCost, currency)} per unit.`
+              : "Set a cost price on the item to see profit."}
+          </p>
         </div>
 
         <FormField

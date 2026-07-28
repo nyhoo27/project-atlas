@@ -15,8 +15,24 @@ function orNull(value: string | undefined): string | null {
   return value ? value : null
 }
 
-function moneyOrNull(value: string): number | null {
-  return value === "" ? null : Number(value)
+/**
+ * A sale's cost is never typed on the sale form — it is captured from
+ * the item it belongs to. Snapshotting it onto the sale keeps profit
+ * fixed even if the item's cost is edited later.
+ */
+async function costOfItem(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  workspaceId: string,
+  itemId: string | null
+): Promise<number | null> {
+  if (!itemId) return null
+  const { data: item } = await supabase
+    .from("items")
+    .select("cost_price")
+    .eq("id", itemId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle()
+  return item?.cost_price != null ? Number(item.cost_price) : null
 }
 
 function baseRow(values: SaleValues) {
@@ -44,19 +60,11 @@ export async function createSale(input: unknown): Promise<SaleActionResult> {
   const values = parsed.data
   const supabase = await createClient()
 
-  // Cost snapshot: use what the user entered, otherwise capture the
-  // item's current cost so profit stays fixed even if the item's cost
-  // is edited later.
-  let costPrice = moneyOrNull(values.costPrice)
-  if (costPrice === null && values.itemId) {
-    const { data: item } = await supabase
-      .from("items")
-      .select("cost_price")
-      .eq("id", values.itemId)
-      .eq("workspace_id", context.workspace.id)
-      .maybeSingle()
-    if (item?.cost_price != null) costPrice = Number(item.cost_price)
-  }
+  const costPrice = await costOfItem(
+    supabase,
+    context.workspace.id,
+    orNull(values.itemId)
+  )
 
   const { data: sale, error } = await supabase
     .from("sales")
@@ -106,7 +114,7 @@ export async function updateSale(
 
   const { data: existing } = await supabase
     .from("sales")
-    .select("id, created_by, sold_by")
+    .select("id, created_by, sold_by, item_id, cost_price")
     .eq("id", saleId)
     .eq("workspace_id", context.workspace.id)
     .maybeSingle()
@@ -117,11 +125,21 @@ export async function updateSale(
     return { ok: false, error: PERMISSION_ERROR }
   }
 
+  // Keep the original cost snapshot; only re-capture when the sale is
+  // pointed at a different item.
+  const newItemId = orNull(values.itemId)
+  const costPrice =
+    newItemId === existing.item_id
+      ? existing.cost_price != null
+        ? Number(existing.cost_price)
+        : null
+      : await costOfItem(supabase, context.workspace.id, newItemId)
+
   const { error } = await supabase
     .from("sales")
     .update({
       sold_by: orNull(values.soldBy) ?? existing.sold_by,
-      cost_price: moneyOrNull(values.costPrice),
+      cost_price: costPrice,
       updated_by: context.userId,
       ...baseRow(values),
     })

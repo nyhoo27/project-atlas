@@ -11,14 +11,6 @@ const requiredMoney = z
   .trim()
   .regex(/^\d+(\.\d{1,2})?$/, "Enter a valid non-negative amount")
 
-const optionalMoney = z
-  .string()
-  .trim()
-  .refine(
-    (value) => value === "" || /^\d+(\.\d{1,2})?$/.test(value),
-    "Enter a valid non-negative amount"
-  )
-
 const isoDate = z
   .string()
   .refine((value) => !Number.isNaN(Date.parse(value)), "Enter a valid date")
@@ -29,7 +21,8 @@ export const saleSchema = z.object({
   soldBy: z.uuid().optional().or(z.literal("")),
   statusOptionId: z.uuid().optional().or(z.literal("")),
   salePrice: requiredMoney,
-  costPrice: optionalMoney,
+  // No cost field: a sale's cost is captured from its item (see
+  // lib/actions/sales.ts), so it is never typed twice.
   quantity: z
     .string()
     .trim()

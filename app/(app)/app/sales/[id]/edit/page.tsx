@@ -48,7 +48,6 @@ export default async function EditSalePage({
           soldBy: sale.sold_by ?? "",
           statusOptionId: sale.status_option_id ?? "",
           salePrice: String(sale.sale_price),
-          costPrice: sale.cost_price != null ? String(sale.cost_price) : "",
           quantity: String(sale.quantity),
           // Raw ISO; the form converts to the browser's local time.
           soldAt: sale.sold_at,
@@ -58,6 +57,8 @@ export default async function EditSalePage({
         items={items}
         statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
         members={members.map((m) => ({ userId: m.userId, fullName: m.fullName }))}
+        existingCostPrice={sale.cost_price != null ? Number(sale.cost_price) : null}
+        originalItemId={sale.item_id ?? ""}
       />
     </div>
   )
