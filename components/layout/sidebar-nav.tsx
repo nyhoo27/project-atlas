@@ -9,6 +9,7 @@ import {
   MessagesSquare,
   CheckSquare,
   Receipt,
+  Truck,
   Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,9 @@ const NAV_ITEMS = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/app/customers", label: "Customers", icon: Users },
   { href: "/app/items", label: "Items", icon: Package },
+  // Suppliers are purchasing-side info — Owner/Manager only, same as
+  // item costs. The pages re-check on the server.
+  { href: "/app/suppliers", label: "Suppliers", icon: Truck, requiresManager: true },
   { href: "/app/interactions", label: "Interactions", icon: MessagesSquare },
   { href: "/app/sales", label: "Sales", icon: Receipt },
   { href: "/app/tasks", label: "Tasks", icon: CheckSquare },

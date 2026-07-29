@@ -72,6 +72,19 @@ export function canViewItemCost(role: WorkspaceRole): boolean {
 }
 
 /**
+ * Suppliers are purchasing-side information — who the business buys
+ * from is commercially sensitive, so it sits with the same roles that
+ * manage items and see costs.
+ */
+export function canViewSuppliers(role: WorkspaceRole): boolean {
+  return role === "owner" || role === "manager"
+}
+
+export function canManageSuppliers(role: WorkspaceRole): boolean {
+  return role === "owner" || role === "manager"
+}
+
+/**
  * Salespeople sell things, so any non-staff role can record a sale.
  * Editing a sale is limited to owner/manager or the person who recorded
  * it or made it (financial records deserve some protection); archiving

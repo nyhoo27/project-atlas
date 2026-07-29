@@ -227,6 +227,7 @@ export type Database = {
           reference_code: string | null
           selling_price: number | null
           status_option_id: string | null
+          supplier_id: string | null
           updated_at: string
           updated_by: string | null
           workspace_id: string
@@ -247,6 +248,7 @@ export type Database = {
           reference_code?: string | null
           selling_price?: number | null
           status_option_id?: string | null
+          supplier_id?: string | null
           updated_at?: string
           updated_by?: string | null
           workspace_id: string
@@ -267,6 +269,7 @@ export type Database = {
           reference_code?: string | null
           selling_price?: number | null
           status_option_id?: string | null
+          supplier_id?: string | null
           updated_at?: string
           updated_by?: string | null
           workspace_id?: string
@@ -284,6 +287,13 @@ export type Database = {
             columns: ["status_option_id"]
             isOneToOne: false
             referencedRelation: "settings_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
@@ -496,6 +506,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "settings_options_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          archived_at: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          address?: string | null
+          archived_at?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          address?: string | null
+          archived_at?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"

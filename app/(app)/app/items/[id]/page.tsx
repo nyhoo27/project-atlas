@@ -13,6 +13,7 @@ import {
   canModifySale,
   canViewFinancials,
   canViewItemCost,
+  canViewSuppliers,
 } from "@/lib/permissions"
 import {
   formatCurrency,
@@ -153,6 +154,21 @@ export default async function ItemDetailPage({
                   </span>
                 )}
               </Field>
+              )}
+              {/* Who we buy from is owner/manager only, like cost. */}
+              {canViewSuppliers(context.role) && (
+                <Field label="Supplier">
+                  {item.supplier ? (
+                    <Link
+                      href={`/app/suppliers/${item.supplier.id}`}
+                      className="hover:underline"
+                    >
+                      {item.supplier.name}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </Field>
               )}
               <Field label="Quantity">{item.quantity}</Field>
               <Field label="Location">{item.location ?? "—"}</Field>

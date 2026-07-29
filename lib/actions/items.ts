@@ -42,6 +42,7 @@ function toItemRow(values: ItemValues) {
     reference_code: orNull(values.referenceCode),
     category_option_id: orNull(values.categoryOptionId),
     status_option_id: orNull(values.statusOptionId),
+    supplier_id: orNull(values.supplierId),
     description: orNull(values.description),
     cost_price: costPrice,
     cost_breakdown: breakdown,

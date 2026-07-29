@@ -30,6 +30,12 @@ A person or company who may buy something. Optionally linked to a `source_option
 
 Anything a workspace sells — deliberately generic, not "products" or "vehicles", so a car dealership and a phone shop use the same table. Linked to `category_option_id` and `status_option_id`. `cost_price` / `selling_price` are `numeric(14,2)` and checked non-negative; `quantity` defaults to 1 and is checked `>= 1`. Soft-archived via `archived_at`.
 
+### suppliers
+
+Who the business buys from — shaped like `customers` (contact person, phone, email, address, notes, soft archive). `items.supplier_id` points at the supplier an item was bought from (`on delete set null`, so removing a supplier never destroys item records). One supplier per item; if multi-sourcing is ever needed this becomes a join table without disturbing what exists.
+
+Suppliers are owner/manager only (`canViewSuppliers` / `canManageSuppliers`) — who you source from is commercially sensitive, so it sits with the same roles that see item costs. That gating also extends to the dashboard activity feed, which is filtered to exclude `record_type = 'supplier'` for other roles, since descriptions name the supplier.
+
 ### interactions
 
 Every logged customer touchpoint (call, message, visit, meeting, complaint, ...) — the heart of the app. Links to a `customer_id` (`on delete set null`, strongly recommended but not required) and optionally an `item_id`. **Append-only**: a database trigger (`enforce_interaction_append_only`, in `0005_rls.sql`) rejects any `UPDATE` that changes a column other than `archived_at`, so even a bug in application code can't silently edit a logged interaction — see [Architecture Decision 003](architecture-decisions.md). Archiving is still an `UPDATE` (setting `archived_at`), restricted to Owner/Manager in server actions, not in RLS.

@@ -37,6 +37,7 @@ export function ItemForm({
   defaultValues,
   categories,
   statuses,
+  suppliers,
 }: {
   mode: "create" | "edit"
   itemId?: string
@@ -44,6 +45,7 @@ export function ItemForm({
   defaultValues?: Partial<ItemValues>
   categories: Option[]
   statuses: Option[]
+  suppliers: Option[]
 }) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -66,6 +68,7 @@ export function ItemForm({
       referenceCode: "",
       categoryOptionId: "",
       statusOptionId: "",
+      supplierId: "",
       description: "",
       costPrice: "",
       costBreakdown: [],
@@ -211,6 +214,26 @@ export function ItemForm({
                     {statuses.map((status) => (
                       <option key={status.id} value={status.id}>
                         {status.label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="supplierId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Supplier</FormLabel>
+                <FormControl>
+                  <NativeSelect {...field}>
+                    <option value="">No supplier</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.label}
                       </option>
                     ))}
                   </NativeSelect>

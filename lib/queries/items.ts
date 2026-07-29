@@ -78,8 +78,10 @@ export type ItemDetail = {
   archived_at: string | null
   category_option_id: string | null
   status_option_id: string | null
+  supplier_id: string | null
   category: { label: string; color: string | null } | null
   status: { label: string; color: string | null } | null
+  supplier: { id: string; name: string } | null
 }
 
 export async function getItemById(
@@ -92,9 +94,10 @@ export async function getItemById(
     .select(
       `id, name, reference_code, description, cost_price, cost_breakdown,
        selling_price, quantity, location, notes, created_at, updated_at,
-       archived_at, category_option_id, status_option_id,
+       archived_at, category_option_id, status_option_id, supplier_id,
        category:settings_options!items_category_option_id_fkey(label, color),
-       status:settings_options!items_status_option_id_fkey(label, color)`
+       status:settings_options!items_status_option_id_fkey(label, color),
+       supplier:suppliers(id, name)`
     )
     .eq("workspace_id", workspaceId)
     .eq("id", itemId)

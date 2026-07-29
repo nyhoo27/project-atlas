@@ -48,9 +48,28 @@ export type DashboardData = {
 export async function getDashboardData(
   workspaceId: string,
   userId: string,
-  timezone: string
+  timezone: string,
+  /**
+   * Record types to leave out of the activity feed. Activity
+   * descriptions name the record ("added supplier Yangon Auto
+   * Imports"), so restricted records must be filtered here too —
+   * otherwise the feed leaks what the pages hide.
+   */
+  excludeActivityRecordTypes: string[] = []
 ): Promise<DashboardData> {
   const supabase = await createClient()
+
+  let activityQuery = supabase
+    .from("activity_logs")
+    .select("id, description, created_at")
+    .eq("workspace_id", workspaceId)
+  if (excludeActivityRecordTypes.length > 0) {
+    activityQuery = activityQuery.not(
+      "record_type",
+      "in",
+      `(${excludeActivityRecordTypes.join(",")})`
+    )
+  }
 
   const [
     customersResult,
@@ -100,12 +119,7 @@ export async function getDashboardData(
       .is("archived_at", null)
       .order("created_at", { ascending: false })
       .limit(5),
-    supabase
-      .from("activity_logs")
-      .select("id, description, created_at")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: false })
-      .limit(8),
+    activityQuery.order("created_at", { ascending: false }).limit(8),
   ])
 
   const openTasks = (tasksResult.data ?? []).filter(

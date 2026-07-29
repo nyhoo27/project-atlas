@@ -38,6 +38,7 @@ export const itemSchema = z.object({
   referenceCode: optionalText(100),
   categoryOptionId: z.uuid().optional().or(z.literal("")),
   statusOptionId: z.uuid().optional().or(z.literal("")),
+  supplierId: z.uuid().optional().or(z.literal("")),
   description: optionalText(5000),
   costPrice: money,
   /**

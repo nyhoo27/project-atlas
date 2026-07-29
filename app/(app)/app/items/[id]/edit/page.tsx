@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getItemById } from "@/lib/queries/items"
 import { getActiveOptions } from "@/lib/queries/settings-options"
+import { getSupplierOptions } from "@/lib/queries/suppliers"
 import { canEditItem } from "@/lib/permissions"
 import { PageHeader } from "@/components/layout/page-header"
 import { ItemForm } from "@/components/forms/item-form"
@@ -25,9 +26,10 @@ export default async function EditItemPage({
   const item = await getItemById(context.workspace.id, id)
   if (!item) notFound()
 
-  const [categories, statuses] = await Promise.all([
+  const [categories, statuses, suppliers] = await Promise.all([
     getActiveOptions(context.workspace.id, "item_category"),
     getActiveOptions(context.workspace.id, "item_status"),
+    getSupplierOptions(context.workspace.id),
   ])
 
   return (
@@ -42,6 +44,7 @@ export default async function EditItemPage({
           referenceCode: item.reference_code ?? "",
           categoryOptionId: item.category_option_id ?? "",
           statusOptionId: item.status_option_id ?? "",
+          supplierId: item.supplier_id ?? "",
           description: item.description ?? "",
           costPrice: item.cost_price != null ? String(item.cost_price) : "",
           costBreakdown: item.cost_breakdown.map((component) => ({
@@ -56,6 +59,7 @@ export default async function EditItemPage({
         }}
         categories={categories.map((c) => ({ id: c.id, label: c.label }))}
         statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
+        suppliers={suppliers.map((s) => ({ id: s.id, label: s.name }))}
       />
     </div>
   )

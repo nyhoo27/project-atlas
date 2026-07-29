@@ -10,7 +10,7 @@ import {
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getDashboardData, type DashboardTask } from "@/lib/queries/dashboard"
 import { getSalesSummary } from "@/lib/queries/sales"
-import { canViewFinancials } from "@/lib/permissions"
+import { canViewFinancials, canViewSuppliers } from "@/lib/permissions"
 import {
   formatCurrency,
   formatDateTime,
@@ -40,7 +40,14 @@ export default async function DashboardPage() {
   // for anyone else — the figures never reach the page.
   const showFinancials = canViewFinancials(role)
   const [data, salesSummary] = await Promise.all([
-    getDashboardData(workspace.id, userId, timezone),
+    getDashboardData(
+      workspace.id,
+      userId,
+      timezone,
+      // Supplier activity names the supplier, so hide it from roles
+      // that can't see suppliers.
+      canViewSuppliers(role) ? [] : ["supplier"]
+    ),
     showFinancials
       ? getSalesSummary(workspace.id, timezone)
       : Promise.resolve(null),
