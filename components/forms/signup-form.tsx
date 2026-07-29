@@ -36,6 +36,7 @@ export function SignupForm() {
       email: "",
       password: "",
       workspaceName: "",
+      inviteCode: "",
     },
   })
 
@@ -124,6 +125,22 @@ export function SignupForm() {
                   <FormDescription>
                     Usually your business name. You can change it later in
                     Settings.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="inviteCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Invite code</FormLabel>
+                  <FormControl>
+                    <Input autoComplete="off" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Ask whoever runs Atlas for the code.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

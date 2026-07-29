@@ -43,6 +43,7 @@ cp .env.example .env.local
 
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — safe for the browser.
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only, never expose to the browser. Used only by the signup flow and the dev seed script.
+- `SIGNUP_INVITE_CODE` — server-only. Creating a workspace requires this code, so signup isn't open to anyone who finds the URL. **Leave it unset and signup is closed entirely** (existing users can still log in). Share the code only with people who should get their own workspace; to add someone to *your* workspace, use Settings → Members instead.
 
 ### 3. Run the database migrations
 

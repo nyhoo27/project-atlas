@@ -46,7 +46,19 @@ export async function signup(input: unknown): Promise<ActionError | void> {
   if (!parsed.success) {
     return { error: "Please check the form and try again." }
   }
-  const { fullName, email, password, workspaceName } = parsed.data
+  const { fullName, email, password, workspaceName, inviteCode } = parsed.data
+
+  // Gate before anything is created. No configured code means signup is
+  // closed entirely — failing shut is the safe default here.
+  const expectedCode = process.env.SIGNUP_INVITE_CODE
+  if (!expectedCode) {
+    return {
+      error: "Signups are currently closed. Ask the workspace owner to add you.",
+    }
+  }
+  if (inviteCode !== expectedCode) {
+    return { error: "That invite code is not valid." }
+  }
 
   const admin = createAdminClient()
 

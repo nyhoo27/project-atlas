@@ -21,6 +21,8 @@ export const signupSchema = z.object({
     .trim()
     .min(1, "Workspace name is required")
     .max(120),
+  /** Checked against SIGNUP_INVITE_CODE so signup isn't open to anyone. */
+  inviteCode: z.string().trim().min(1, "Invite code is required"),
 })
 
 export type SignupValues = z.infer<typeof signupSchema>
