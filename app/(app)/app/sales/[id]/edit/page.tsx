@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { requireWorkspaceContext } from "@/lib/queries/current"
-import { getSaleById, getItemOptionsWithPrices } from "@/lib/queries/sales"
-import { getCustomerOptions } from "@/lib/queries/interactions"
+import { getSaleById } from "@/lib/queries/sales"
 import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { canModifySale, canViewFinancials } from "@/lib/permissions"
@@ -28,23 +27,20 @@ export default async function EditSalePage({
     redirect(`/app/sales/${id}`)
   }
 
-  const [customers, items, statuses, members] = await Promise.all([
-    getCustomerOptions(context.workspace.id),
-    getItemOptionsWithPrices(context.workspace.id),
+  // Customers and items are searched as you type; the sale's own
+  // linked records come along with it, so nothing else is loaded.
+  const [statuses, members] = await Promise.all([
     getActiveOptions(context.workspace.id, "sale_status"),
     getWorkspaceMembers(context.workspace.id),
   ])
 
-  // Costs are owner-only and this form is a client component — strip
-  // them so they never reach a salesperson's browser.
   const showFinancials = canViewFinancials(context.role)
-  const itemOptions = showFinancials
-    ? items
-    : items.map((item) => ({ id: item.id, name: item.name, sellingPrice: item.sellingPrice }))
 
   return (
     <div>
-      <PageHeader title={`Edit Sale — ${formatDateTime(sale.sold_at, context.workspace.timezone ?? "Asia/Yangon")}`} />
+      <PageHeader
+        title={`Edit Sale — ${formatDateTime(sale.sold_at, context.workspace.timezone ?? "Asia/Yangon")}`}
+      />
       <SaleForm
         mode="edit"
         saleId={sale.id}
@@ -60,8 +56,8 @@ export default async function EditSalePage({
           soldAt: sale.sold_at,
           notes: sale.notes ?? "",
         }}
-        customers={customers}
-        items={itemOptions}
+        initialCustomerLabel={sale.customer?.name}
+        initialItemLabel={sale.item?.name}
         statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
         members={members.map((m) => ({ userId: m.userId, fullName: m.fullName }))}
         existingCostPrice={

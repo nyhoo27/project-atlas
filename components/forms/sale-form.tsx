@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { RecordSearchSelect } from "@/components/ui/record-search-select"
+import type { RecordOption } from "@/lib/actions/record-search"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Form,
@@ -24,7 +26,6 @@ import {
 } from "@/components/ui/form"
 
 type Option = { id: string; label: string }
-type NamedOption = { id: string; name: string; costPrice?: number | null; sellingPrice?: number | null }
 type MemberOption = { userId: string; fullName: string }
 
 function localNow(): string {
@@ -48,10 +49,10 @@ export function SaleForm({
   saleId,
   currency,
   defaultValues,
-  customers,
-  items,
   statuses,
   members,
+  initialCustomerLabel,
+  initialItemLabel,
   existingCostPrice,
   originalItemId,
   showFinancials = false,
@@ -60,10 +61,11 @@ export function SaleForm({
   saleId?: string
   currency: string
   defaultValues?: Partial<SaleValues>
-  customers: NamedOption[]
-  items: NamedOption[]
   statuses: Option[]
   members: MemberOption[]
+  /** Names of records already chosen, so the pickers show them. */
+  initialCustomerLabel?: string
+  initialItemLabel?: string
   /** Edit mode: the cost snapshot already stored on this sale. */
   existingCostPrice?: number | null
   /** Edit mode: the item the sale was recorded against. */
@@ -95,16 +97,19 @@ export function SaleForm({
     },
   })
 
+  // Cost of the item picked from the search box (owner-only; the server
+  // omits it for everyone else).
+  const [pickedItemCost, setPickedItemCost] = useState<number | null>(null)
+
   // Live totals. Cost is never typed here — it comes from the item (or,
   // when editing, from the snapshot already stored on this sale).
   const salePrice = parseFloat(form.watch("salePrice")) || 0
   const quantity = parseInt(form.watch("quantity"), 10) || 0
   const selectedItemId = form.watch("itemId")
-  const itemCost = items.find((i) => i.id === selectedItemId)?.costPrice ?? null
   const effectiveCost =
     mode === "edit" && selectedItemId === (originalItemId ?? "")
       ? (existingCostPrice ?? null)
-      : itemCost
+      : pickedItemCost
   const total = salePrice * quantity
   const profit = (salePrice - (effectiveCost ?? 0)) * quantity
 
@@ -125,14 +130,20 @@ export function SaleForm({
     }
   }
 
-  // Picking an item in create mode prefills the sale price from its
-  // selling price (still editable — you may sell above or below list).
-  function onItemChange(itemId: string) {
-    if (mode !== "create") return
-    const item = items.find((i) => i.id === itemId)
-    if (!item) return
-    if (item.sellingPrice != null && !form.getValues("salePrice")) {
-      form.setValue("salePrice", String(item.sellingPrice))
+  /**
+   * Picking an item prefills the sale price from its selling price
+   * (still editable — you may sell above or below list) and remembers
+   * its cost for the profit preview.
+   */
+  function onItemPicked(id: string, option?: RecordOption) {
+    form.setValue("itemId", id, { shouldValidate: true })
+    setPickedItemCost(option?.costPrice ?? null)
+    if (
+      mode === "create" &&
+      option?.sellingPrice != null &&
+      !form.getValues("salePrice")
+    ) {
+      form.setValue("salePrice", String(option.sellingPrice))
     }
   }
 
@@ -153,20 +164,14 @@ export function SaleForm({
               <FormItem>
                 <FormLabel>Item</FormLabel>
                 <FormControl>
-                  <NativeSelect
-                    {...field}
-                    onChange={(event) => {
-                      field.onChange(event)
-                      onItemChange(event.target.value)
-                    }}
-                  >
-                    <option value="">No item</option>
-                    {items.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  <RecordSearchSelect
+                    kind="item"
+                    value={field.value ?? ""}
+                    initialLabel={initialItemLabel}
+                    onChange={onItemPicked}
+                    placeholder="Search items by name or code..."
+                    emptyLabel="No items found."
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -179,14 +184,16 @@ export function SaleForm({
               <FormItem>
                 <FormLabel>Customer</FormLabel>
                 <FormControl>
-                  <NativeSelect {...field}>
-                    <option value="">No customer</option>
-                    {customers.map((customer) => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  <RecordSearchSelect
+                    kind="customer"
+                    value={field.value ?? ""}
+                    initialLabel={initialCustomerLabel}
+                    onChange={(id) =>
+                      form.setValue("customerId", id, { shouldValidate: true })
+                    }
+                    placeholder="Search customers by name or phone..."
+                    emptyLabel="No customers found."
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
