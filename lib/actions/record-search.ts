@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { requireWorkspaceContext } from "@/lib/queries/current"
-import { canViewFinancials } from "@/lib/permissions"
+import { canViewFinancials, canViewSuppliers } from "@/lib/permissions"
 
 /**
  * Type-ahead lookups for record pickers. Workspace-scoped and capped at
@@ -53,6 +53,37 @@ export async function searchCustomers(rawTerm: string): Promise<RecordOption[]> 
     id: customer.id,
     name: customer.name,
     hint: customer.phone,
+  }))
+}
+
+export async function searchSuppliers(rawTerm: string): Promise<RecordOption[]> {
+  const context = await requireWorkspaceContext()
+  // Purchasing information is owner/manager only — return nothing rather
+  // than leaking supplier names to other roles.
+  if (!canViewSuppliers(context.role)) return []
+
+  const supabase = await createClient()
+  const term = sanitize(rawTerm)
+
+  let query = supabase
+    .from("suppliers")
+    .select("id, name, contact_person, phone")
+    .eq("workspace_id", context.workspace.id)
+    .is("archived_at", null)
+    .order("name", { ascending: true })
+    .limit(LIMIT)
+
+  if (term) {
+    query = query.or(
+      `name.ilike.%${term}%,contact_person.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`
+    )
+  }
+
+  const { data } = await query
+  return (data ?? []).map((supplier) => ({
+    id: supplier.id,
+    name: supplier.name,
+    hint: supplier.contact_person ?? supplier.phone,
   }))
 }
 

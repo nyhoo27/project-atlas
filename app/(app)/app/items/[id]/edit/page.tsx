@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getItemById } from "@/lib/queries/items"
 import { getActiveOptions } from "@/lib/queries/settings-options"
-import { getSupplierOptions } from "@/lib/queries/suppliers"
 import { canEditItem } from "@/lib/permissions"
 import { PageHeader } from "@/components/layout/page-header"
 import { ItemForm } from "@/components/forms/item-form"
@@ -26,10 +25,11 @@ export default async function EditItemPage({
   const item = await getItemById(context.workspace.id, id)
   if (!item) notFound()
 
-  const [categories, statuses, suppliers] = await Promise.all([
+  // Suppliers are searched as you type; the item's own supplier comes
+  // along with the item itself.
+  const [categories, statuses] = await Promise.all([
     getActiveOptions(context.workspace.id, "item_category"),
     getActiveOptions(context.workspace.id, "item_status"),
-    getSupplierOptions(context.workspace.id),
   ])
 
   return (
@@ -59,7 +59,7 @@ export default async function EditItemPage({
         }}
         categories={categories.map((c) => ({ id: c.id, label: c.label }))}
         statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
-        suppliers={suppliers.map((s) => ({ id: s.id, label: s.name }))}
+        initialSupplierLabel={item.supplier?.name}
       />
     </div>
   )

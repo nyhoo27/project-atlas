@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { NativeSelect } from "@/components/ui/native-select"
+import { RecordSearchSelect } from "@/components/ui/record-search-select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Form,
@@ -37,7 +38,7 @@ export function ItemForm({
   defaultValues,
   categories,
   statuses,
-  suppliers,
+  initialSupplierLabel,
 }: {
   mode: "create" | "edit"
   itemId?: string
@@ -45,7 +46,8 @@ export function ItemForm({
   defaultValues?: Partial<ItemValues>
   categories: Option[]
   statuses: Option[]
-  suppliers: Option[]
+  /** Name of the already-chosen supplier, so the picker shows it. */
+  initialSupplierLabel?: string
 }) {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -229,14 +231,16 @@ export function ItemForm({
               <FormItem>
                 <FormLabel>Supplier</FormLabel>
                 <FormControl>
-                  <NativeSelect {...field}>
-                    <option value="">No supplier</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.label}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                  <RecordSearchSelect
+                    kind="supplier"
+                    value={field.value ?? ""}
+                    initialLabel={initialSupplierLabel}
+                    onChange={(id) =>
+                      form.setValue("supplierId", id, { shouldValidate: true })
+                    }
+                    placeholder="Search suppliers by name or contact..."
+                    emptyLabel="No suppliers found."
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

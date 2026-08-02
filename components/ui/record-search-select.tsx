@@ -5,6 +5,7 @@ import { Search, X, Loader2 } from "lucide-react"
 import {
   searchCustomers,
   searchItems,
+  searchSuppliers,
   type RecordOption,
 } from "@/lib/actions/record-search"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils"
 const SEARCHERS = {
   customer: searchCustomers,
   item: searchItems,
+  supplier: searchSuppliers,
 } as const
 
 /**
