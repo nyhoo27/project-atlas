@@ -126,5 +126,13 @@
   }
   html {
     @apply font-sans;
+    /*
+     * Base size for the whole interface. Tailwind sizes text, padding,
+     * heights and icons in rem, so this one number scales everything
+     * together — text stays comfortable without the layout feeling
+     * cramped. 100% is the browser default (16px); raise for a bigger,
+     * roomier UI, lower for more density on screen.
+     */
+    font-size: 112.5%;
   }
 }
