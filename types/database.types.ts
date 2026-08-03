@@ -210,6 +210,51 @@ export type Database = {
           },
         ]
       }
+      item_images: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          sort_order: number
+          storage_path: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          sort_order?: number
+          storage_path: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          sort_order?: number
+          storage_path?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_images_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_images_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           archived_at: string | null
@@ -811,6 +856,10 @@ export type Database = {
         Returns: undefined
       }
       shares_workspace_with: { Args: { p_user_id: string }; Returns: boolean }
+      storage_path_in_my_workspace: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

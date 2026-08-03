@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { Plus, Image as ImageIcon } from "lucide-react"
 import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getItems } from "@/lib/queries/items"
 import { getActiveOptions } from "@/lib/queries/settings-options"
+import { getItemThumbnails } from "@/lib/queries/item-images"
 import { canArchive, canCreateItem } from "@/lib/permissions"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
 import { PageHeader } from "@/components/layout/page-header"
@@ -52,6 +53,10 @@ export default async function ItemsPage({
     getActiveOptions(context.workspace.id, "item_status"),
   ])
 
+  const thumbnails = await getItemThumbnails(
+    context.workspace.id,
+    items.map((item) => item.id)
+  )
   const hasFilters = Boolean(search || categoryFilter || statusFilter || showArchived)
 
   return (
@@ -135,6 +140,7 @@ export default async function ItemsPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-14" />
                 <TableHead>Name</TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Category</TableHead>
@@ -148,6 +154,23 @@ export default async function ItemsPage({
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
+                  <TableCell>
+                    {thumbnails.get(item.id) ? (
+                      /* Signed URL from private storage — see
+                         components/items/item-images.tsx */
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={thumbnails.get(item.id)}
+                        alt=""
+                        loading="lazy"
+                        className="size-10 rounded border object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-10 items-center justify-center rounded border bg-muted">
+                        <ImageIcon className="size-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Link
                       href={`/app/items/${item.id}`}

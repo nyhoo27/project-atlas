@@ -6,6 +6,7 @@ import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getItemById, getItemRelated } from "@/lib/queries/items"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { getSalesByItem, type SaleListRow } from "@/lib/queries/sales"
+import { getItemImages } from "@/lib/queries/item-images"
 import {
   canArchive,
   canCreateSale,
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArchiveItemButton } from "@/components/items/item-actions"
+import { ItemImages } from "@/components/items/item-images"
 import { SalesTable } from "@/components/sales/sales-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -56,10 +58,11 @@ export default async function ItemDetailPage({
   const item = await getItemById(context.workspace.id, id)
   if (!item) notFound()
 
-  const [related, members, sales] = await Promise.all([
+  const [related, members, sales, images] = await Promise.all([
     getItemRelated(context.workspace.id, id),
     getWorkspaceMembers(context.workspace.id),
     getSalesByItem(context.workspace.id, id),
+    getItemImages(context.workspace.id, id),
   ])
   const memberName = new Map(members.map((m) => [m.userId, m.fullName]))
 
@@ -119,6 +122,7 @@ export default async function ItemDetailPage({
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="photos">Photos ({images.length})</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="interactions">
             Interactions ({related.interactions.length})
@@ -194,6 +198,14 @@ export default async function ItemDetailPage({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="photos" className="mt-4">
+          <ItemImages
+            itemId={item.id}
+            images={images}
+            canEdit={canEditItem(context.role)}
+          />
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-4">
