@@ -20,6 +20,8 @@ export type RecordOption = {
   sellingPrice?: number | null
   /** Items only, owner-only — used for the profit preview. */
   costPrice?: number | null
+  /** Items only — units currently in stock. */
+  quantity?: number | null
 }
 
 const LIMIT = 20
@@ -95,7 +97,7 @@ export async function searchItems(rawTerm: string): Promise<RecordOption[]> {
 
   let query = supabase
     .from("items")
-    .select("id, name, reference_code, selling_price, cost_price")
+    .select("id, name, reference_code, selling_price, cost_price, quantity")
     .eq("workspace_id", context.workspace.id)
     .is("archived_at", null)
     .order("name", { ascending: true })
@@ -111,7 +113,12 @@ export async function searchItems(rawTerm: string): Promise<RecordOption[]> {
   return (data ?? []).map((item) => ({
     id: item.id,
     name: item.name,
-    hint: item.reference_code,
+    // Stock matters when choosing what to sell, so show it alongside
+    // the reference code.
+    hint: [item.reference_code, `${item.quantity} in stock`]
+      .filter(Boolean)
+      .join(" · "),
+    quantity: item.quantity,
     sellingPrice: item.selling_price != null ? Number(item.selling_price) : null,
     // Cost is owner-only, so non-owners never receive it.
     costPrice:

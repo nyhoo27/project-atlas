@@ -100,6 +100,9 @@ export function SaleForm({
   // Cost of the item picked from the search box (owner-only; the server
   // omits it for everyone else).
   const [pickedItemCost, setPickedItemCost] = useState<number | null>(null)
+  // Stock of the chosen item, so you can see what's available before
+  // the server rejects an over-sale.
+  const [pickedItemStock, setPickedItemStock] = useState<number | null>(null)
 
   // Live totals. Cost is never typed here — it comes from the item (or,
   // when editing, from the snapshot already stored on this sale).
@@ -138,6 +141,7 @@ export function SaleForm({
   function onItemPicked(id: string, option?: RecordOption) {
     form.setValue("itemId", id, { shouldValidate: true })
     setPickedItemCost(option?.costPrice ?? null)
+    setPickedItemStock(option?.quantity ?? null)
     if (
       mode === "create" &&
       option?.sellingPrice != null &&
@@ -222,6 +226,17 @@ export function SaleForm({
                 <FormControl>
                   <Input inputMode="numeric" {...field} />
                 </FormControl>
+                {pickedItemStock !== null && (
+                  <FormDescription
+                    className={
+                      quantity > pickedItemStock ? "text-destructive" : undefined
+                    }
+                  >
+                    {quantity > pickedItemStock
+                      ? `Only ${pickedItemStock} in stock.`
+                      : `${pickedItemStock} in stock.`}
+                  </FormDescription>
+                )}
                 <FormMessage />
               </FormItem>
             )}

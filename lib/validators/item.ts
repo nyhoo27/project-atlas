@@ -48,11 +48,12 @@ export const itemSchema = z.object({
    */
   costBreakdown: z.array(costComponentSchema).max(20).default([]),
   sellingPrice: money,
+  // Zero is valid: an item that has sold out still exists. Sales
+  // decrement this automatically (migration 0012).
   quantity: z
     .string()
     .trim()
-    .regex(/^\d+$/, "Quantity must be a whole number")
-    .refine((value) => parseInt(value, 10) >= 1, "Quantity must be at least 1"),
+    .regex(/^\d+$/, "Quantity must be a whole number"),
   location: optionalText(200),
   notes: optionalText(5000),
 })

@@ -16,6 +16,16 @@ function orNull(value: string | undefined): string | null {
 }
 
 /**
+ * The stock trigger raises a readable message when a sale would take
+ * more units than an item has ("Not enough stock: only 3 left"). Pass
+ * that through rather than burying it under a generic failure.
+ */
+function stockMessage(error: { message?: string } | null): string | null {
+  const match = (error?.message ?? "").match(/Not enough stock:[^\n]*/)
+  return match ? match[0].trim() : null
+}
+
+/**
  * A sale's cost is never typed on the sale form — it is captured from
  * the item it belongs to. Snapshotting it onto the sale keeps profit
  * fixed even if the item's cost is edited later.
@@ -79,6 +89,8 @@ export async function createSale(input: unknown): Promise<SaleActionResult> {
     .single()
 
   if (error || !sale) {
+    const shortage = stockMessage(error)
+    if (shortage) return { ok: false, error: shortage }
     console.error("createSale failed:", error)
     return { ok: false, error: "Sale could not be recorded. Please try again." }
   }
@@ -147,6 +159,8 @@ export async function updateSale(
     .eq("workspace_id", context.workspace.id)
 
   if (error) {
+    const shortage = stockMessage(error)
+    if (shortage) return { ok: false, error: shortage }
     console.error("updateSale failed:", error)
     return { ok: false, error: "Sale could not be updated. Please try again." }
   }

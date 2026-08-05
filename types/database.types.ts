@@ -851,6 +851,14 @@ export type Database = {
         Args: { p_workspace_id: string }
         Returns: boolean
       }
+      sale_stock_units: {
+        Args: {
+          p_archived_at: string
+          p_quantity: number
+          p_status_option_id: string
+        }
+        Returns: number
+      }
       seed_default_settings_options: {
         Args: { p_workspace_id: string }
         Returns: undefined
