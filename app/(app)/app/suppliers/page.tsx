@@ -6,6 +6,8 @@ import { requireWorkspaceContext } from "@/lib/queries/current"
 import { getSuppliers } from "@/lib/queries/suppliers"
 import { canArchive, canManageSuppliers, canViewSuppliers } from "@/lib/permissions"
 import { formatDate } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -41,9 +43,11 @@ export default async function SuppliersPage({
   const search = typeof params.q === "string" ? params.q : ""
   const showArchived = params.archived === "1"
 
-  const suppliers = await getSuppliers(context.workspace.id, {
+  const page = getPage(params.page)
+  const { rows: suppliers, total } = await getSuppliers(context.workspace.id, {
     search,
     showArchived,
+    page,
   })
   const hasFilters = Boolean(search || showArchived)
 
@@ -172,6 +176,14 @@ export default async function SuppliersPage({
           </Table>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/suppliers"
+        searchParams={params}
+        label="suppliers"
+      />
     </div>
   )
 }

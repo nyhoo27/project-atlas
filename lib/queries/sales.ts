@@ -1,6 +1,7 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
 import { todayRange } from "@/lib/utils/format"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type SaleListRow = {
   id: string
@@ -21,6 +22,7 @@ export type SaleListFilters = {
   soldBy?: string
   statusOptionId?: string
   showArchived?: boolean
+  page?: number
 }
 
 const LIST_SELECT = `id, sale_price, cost_price, quantity, sold_at, sold_by, archived_at,
@@ -28,25 +30,58 @@ const LIST_SELECT = `id, sale_price, cost_price, quantity, sold_at, sold_by, arc
    item:items(id, name),
    status:settings_options(label)`
 
+/** Shared filter application for both the paged and unpaged variants. */
+function applySaleFilters<T>(query: T, filters: SaleListFilters): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = query as any
+  if (!filters.showArchived) q = q.is("archived_at", null)
+  if (filters.customerId) q = q.eq("customer_id", filters.customerId)
+  if (filters.itemId) q = q.eq("item_id", filters.itemId)
+  if (filters.soldBy) q = q.eq("sold_by", filters.soldBy)
+  if (filters.statusOptionId) q = q.eq("status_option_id", filters.statusOptionId)
+  return q as T
+}
+
 export async function getSales(
+  workspaceId: string,
+  filters: SaleListFilters
+): Promise<Paginated<SaleListRow>> {
+  const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
+
+  const query = applySaleFilters(
+    supabase
+      .from("sales")
+      .select(LIST_SELECT, { count: "exact" })
+      .eq("workspace_id", workspaceId)
+      .order("sold_at", { ascending: false })
+      .range(from, to),
+    filters
+  )
+
+  const { data, count } = await query
+  return { rows: (data ?? []) as SaleListRow[], total: count ?? 0 }
+}
+
+/**
+ * Sales for one record, for the Sales tab on customer and item detail
+ * pages. Capped rather than paged — a single customer or item has few
+ * enough sales that a tab doesn't need its own pager.
+ */
+async function getSalesForRecord(
   workspaceId: string,
   filters: SaleListFilters
 ): Promise<SaleListRow[]> {
   const supabase = await createClient()
-
-  let query = supabase
-    .from("sales")
-    .select(LIST_SELECT)
-    .eq("workspace_id", workspaceId)
-    .order("sold_at", { ascending: false })
-    .limit(300)
-
-  if (!filters.showArchived) query = query.is("archived_at", null)
-  if (filters.customerId) query = query.eq("customer_id", filters.customerId)
-  if (filters.itemId) query = query.eq("item_id", filters.itemId)
-  if (filters.soldBy) query = query.eq("sold_by", filters.soldBy)
-  if (filters.statusOptionId) query = query.eq("status_option_id", filters.statusOptionId)
-
+  const query = applySaleFilters(
+    supabase
+      .from("sales")
+      .select(LIST_SELECT)
+      .eq("workspace_id", workspaceId)
+      .order("sold_at", { ascending: false })
+      .limit(200),
+    filters
+  )
   const { data } = await query
   return (data ?? []) as SaleListRow[]
 }
@@ -56,7 +91,7 @@ export async function getSalesByCustomer(
   workspaceId: string,
   customerId: string
 ): Promise<SaleListRow[]> {
-  return getSales(workspaceId, { customerId })
+  return getSalesForRecord(workspaceId, { customerId })
 }
 
 /** Sales of one item (for the item detail Sales tab). */
@@ -64,7 +99,7 @@ export async function getSalesByItem(
   workspaceId: string,
   itemId: string
 ): Promise<SaleListRow[]> {
-  return getSales(workspaceId, { itemId })
+  return getSalesForRecord(workspaceId, { itemId })
 }
 
 export type SaleDetail = {

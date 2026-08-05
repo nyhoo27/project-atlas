@@ -11,6 +11,8 @@ import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { canArchive } from "@/lib/permissions"
 import { formatDateTime } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -46,13 +48,15 @@ export default async function InteractionsPage({
   const itemFilter = typeof params.item === "string" ? params.item : ""
   const createdByFilter = typeof params.by === "string" ? params.by : ""
 
-  const [interactions, types, customers, items, members] = await Promise.all([
+  const page = getPage(params.page)
+  const [{ rows: interactions, total }, types, customers, items, members] = await Promise.all([
     getInteractions(context.workspace.id, {
       search,
       typeOptionId: typeFilter || undefined,
       customerId: customerFilter || undefined,
       itemId: itemFilter || undefined,
       createdBy: createdByFilter || undefined,
+      page,
     }),
     getActiveOptions(context.workspace.id, "interaction_type"),
     getCustomerOptions(context.workspace.id),
@@ -227,6 +231,14 @@ export default async function InteractionsPage({
           </Table>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/interactions"
+        searchParams={params}
+        label="interactions"
+      />
     </div>
   )
 }

@@ -7,6 +7,8 @@ import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { canArchive, canModifyTask } from "@/lib/permissions"
 import { formatDateTime, todayRange } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -46,12 +48,14 @@ export default async function TasksPage({
   const onlyDueToday = params.due === "today"
   const onlyOverdue = params.overdue === "true"
 
-  const [tasks, statuses, priorities, members] = await Promise.all([
+  const page = getPage(params.page)
+  const [{ rows: tasks, total }, statuses, priorities, members] = await Promise.all([
     getTasks(context.workspace.id, {
       search,
       statusOptionId: statusFilter || undefined,
       priorityOptionId: priorityFilter || undefined,
       assignedTo: assignedFilter || undefined,
+      page,
     }),
     getActiveOptions(context.workspace.id, "task_status"),
     getActiveOptions(context.workspace.id, "task_priority"),
@@ -285,6 +289,14 @@ export default async function TasksPage({
             ))}
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/tasks"
+        searchParams={params}
+        label="tasks"
+      />
     </div>
   )
 }

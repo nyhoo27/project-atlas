@@ -1,6 +1,7 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
 import type { TimelineEntry } from "@/lib/queries/customers"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type ItemListRow = {
   id: string
@@ -19,24 +20,27 @@ export type ItemListFilters = {
   categoryOptionId?: string
   statusOptionId?: string
   showArchived?: boolean
+  page?: number
 }
 
 export async function getItems(
   workspaceId: string,
   filters: ItemListFilters
-): Promise<ItemListRow[]> {
+): Promise<Paginated<ItemListRow>> {
   const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
 
   let query = supabase
     .from("items")
     .select(
       `id, name, reference_code, selling_price, quantity, created_at, archived_at,
        category:settings_options!items_category_option_id_fkey(label, color),
-       status:settings_options!items_status_option_id_fkey(label, color)`
+       status:settings_options!items_status_option_id_fkey(label, color)`,
+      { count: "exact" }
     )
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
-    .limit(200)
+    .range(from, to)
 
   if (!filters.showArchived) {
     query = query.is("archived_at", null)
@@ -56,8 +60,8 @@ export async function getItems(
     }
   }
 
-  const { data } = await query
-  return (data ?? []) as ItemListRow[]
+  const { data, count } = await query
+  return { rows: (data ?? []) as ItemListRow[], total: count ?? 0 }
 }
 
 export type CostComponent = { label: string; amount: number }

@@ -1,5 +1,6 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type TaskListRow = {
   id: string
@@ -21,13 +22,15 @@ export type TaskListFilters = {
   statusOptionId?: string
   priorityOptionId?: string
   assignedTo?: string
+  page?: number
 }
 
 export async function getTasks(
   workspaceId: string,
   filters: TaskListFilters
-): Promise<TaskListRow[]> {
+): Promise<Paginated<TaskListRow>> {
   const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
 
   let query = supabase
     .from("tasks")
@@ -36,12 +39,17 @@ export async function getTasks(
        status:settings_options!tasks_status_option_id_fkey(value, label),
        priority:settings_options!tasks_priority_option_id_fkey(value, label),
        customer:customers(id, name),
-       item:items(id, name)`
+       item:items(id, name)`,
+      { count: "exact" }
     )
     .eq("workspace_id", workspaceId)
     .is("archived_at", null)
+    // Open tasks first (completed_at is null), then done ones. This
+    // keeps the page order matching the Overdue/Today/Upcoming/Completed
+    // grouping, so sections stay meaningful once the list is paged.
+    .order("completed_at", { ascending: true, nullsFirst: true })
     .order("due_at", { ascending: true, nullsFirst: false })
-    .limit(300)
+    .range(from, to)
 
   if (filters.statusOptionId) {
     query = query.eq("status_option_id", filters.statusOptionId)
@@ -59,8 +67,8 @@ export async function getTasks(
     }
   }
 
-  const { data } = await query
-  return (data ?? []) as TaskListRow[]
+  const { data, count } = await query
+  return { rows: (data ?? []) as TaskListRow[], total: count ?? 0 }
 }
 
 export type TaskDetail = {

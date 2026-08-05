@@ -7,6 +7,8 @@ import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getItemThumbnails } from "@/lib/queries/item-images"
 import { canArchive, canCreateItem } from "@/lib/permissions"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -42,12 +44,14 @@ export default async function ItemsPage({
   const statusFilter = typeof params.status === "string" ? params.status : ""
   const showArchived = params.archived === "1"
 
-  const [items, categories, statuses] = await Promise.all([
+  const page = getPage(params.page)
+  const [{ rows: items, total }, categories, statuses] = await Promise.all([
     getItems(context.workspace.id, {
       search,
       categoryOptionId: categoryFilter || undefined,
       statusOptionId: statusFilter || undefined,
       showArchived,
+      page,
     }),
     getActiveOptions(context.workspace.id, "item_category"),
     getActiveOptions(context.workspace.id, "item_status"),
@@ -223,6 +227,14 @@ export default async function ItemsPage({
           </Table>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/items"
+        searchParams={params}
+        label="items"
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type SupplierListRow = {
   id: string
@@ -13,16 +14,20 @@ export type SupplierListRow = {
 
 export async function getSuppliers(
   workspaceId: string,
-  filters: { search?: string; showArchived?: boolean }
-): Promise<SupplierListRow[]> {
+  filters: { search?: string; showArchived?: boolean; page?: number }
+): Promise<Paginated<SupplierListRow>> {
   const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
 
   let query = supabase
     .from("suppliers")
-    .select("id, name, contact_person, phone, email, created_at, archived_at")
+    .select(
+      "id, name, contact_person, phone, email, created_at, archived_at",
+      { count: "exact" }
+    )
     .eq("workspace_id", workspaceId)
     .order("name", { ascending: true })
-    .limit(300)
+    .range(from, to)
 
   if (!filters.showArchived) query = query.is("archived_at", null)
   if (filters.search) {
@@ -34,8 +39,8 @@ export async function getSuppliers(
     }
   }
 
-  const { data } = await query
-  return data ?? []
+  const { data, count } = await query
+  return { rows: data ?? [], total: count ?? 0 }
 }
 
 export type SupplierDetail = {

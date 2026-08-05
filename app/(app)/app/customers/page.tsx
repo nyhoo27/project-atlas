@@ -7,6 +7,8 @@ import { getActiveOptions } from "@/lib/queries/settings-options"
 import { getWorkspaceMembers } from "@/lib/queries/members"
 import { canArchive, canCreateCustomer } from "@/lib/permissions"
 import { formatDate } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -41,12 +43,14 @@ export default async function CustomersPage({
   const assignedFilter = typeof params.assigned === "string" ? params.assigned : ""
   const showArchived = params.archived === "1"
 
-  const [customers, sources, members] = await Promise.all([
+  const page = getPage(params.page)
+  const [{ rows: customers, total }, sources, members] = await Promise.all([
     getCustomers(context.workspace.id, {
       search,
       sourceOptionId: sourceFilter || undefined,
       assignedTo: assignedFilter || undefined,
       showArchived,
+      page,
     }),
     getActiveOptions(context.workspace.id, "customer_source"),
     getWorkspaceMembers(context.workspace.id),
@@ -202,6 +206,14 @@ export default async function CustomersPage({
           </Table>
         </div>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/customers"
+        searchParams={params}
+        label="customers"
+      />
     </div>
   )
 }

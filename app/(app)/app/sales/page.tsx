@@ -13,6 +13,8 @@ import {
   canViewFinancials,
 } from "@/lib/permissions"
 import { formatCurrency } from "@/lib/utils/format"
+import { getPage } from "@/lib/utils/pagination"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
@@ -40,13 +42,15 @@ export default async function SalesPage({
   const statusFilter = typeof params.status === "string" ? params.status : ""
   const showArchived = params.archived === "1"
 
-  const [sales, customers, items, statuses, members] = await Promise.all([
+  const page = getPage(params.page)
+  const [{ rows: sales, total }, customers, items, statuses, members] = await Promise.all([
     getSales(context.workspace.id, {
       customerId: customerFilter || undefined,
       itemId: itemFilter || undefined,
       soldBy: soldByFilter || undefined,
       statusOptionId: statusFilter || undefined,
       showArchived,
+      page,
     }),
     getCustomerOptions(context.workspace.id),
     getItemOptions(context.workspace.id),
@@ -60,7 +64,9 @@ export default async function SalesPage({
     customerFilter || itemFilter || soldByFilter || statusFilter || showArchived
   )
 
-  // Totals across the shown rows.
+  // Totals for the rows on this page only — summing every matching sale
+  // would need a database aggregate, and quietly showing a partial
+  // figure as if it were the total would be worse than labelling it.
   const totalRevenue = sales.reduce(
     (sum, s) => sum + Number(s.sale_price) * s.quantity,
     0
@@ -163,22 +169,28 @@ export default async function SalesPage({
           <div className="mb-3 flex flex-wrap gap-6 text-sm">
             <div>
               <span className="text-muted-foreground">
-                {sales.length} sale{sales.length === 1 ? "" : "s"}
-                {showFinancials ? " · Revenue: " : ""}
+                {total.toLocaleString()} sale{total === 1 ? "" : "s"}
               </span>
-              {showFinancials && (
-                <span className="font-semibold tabular-nums">
-                  {formatCurrency(totalRevenue, currency)}
-                </span>
-              )}
             </div>
             {showFinancials && (
-              <div>
-                <span className="text-muted-foreground">Profit: </span>
-                <span className="font-semibold tabular-nums">
-                  {formatCurrency(totalProfit, currency)}
-                </span>
-              </div>
+              <>
+                <div>
+                  <span className="text-muted-foreground">
+                    Revenue on this page:{" "}
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    {formatCurrency(totalRevenue, currency)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">
+                    Profit on this page:{" "}
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    {formatCurrency(totalProfit, currency)}
+                  </span>
+                </div>
+              </>
             )}
           </div>
           <SalesTable
@@ -197,6 +209,14 @@ export default async function SalesPage({
           />
         </>
       )}
+
+      <PaginationControls
+        page={page}
+        total={total}
+        basePath="/app/sales"
+        searchParams={params}
+        label="sales"
+      />
     </div>
   )
 }

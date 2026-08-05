@@ -1,5 +1,6 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type CustomerListRow = {
   id: string
@@ -17,23 +18,26 @@ export type CustomerListFilters = {
   sourceOptionId?: string
   assignedTo?: string
   showArchived?: boolean
+  page?: number
 }
 
 export async function getCustomers(
   workspaceId: string,
   filters: CustomerListFilters
-): Promise<CustomerListRow[]> {
+): Promise<Paginated<CustomerListRow>> {
   const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
 
   let query = supabase
     .from("customers")
     .select(
       `id, name, phone, email, created_at, archived_at, assigned_to,
-       source:settings_options(label, color)`
+       source:settings_options(label, color)`,
+      { count: "exact" }
     )
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
-    .limit(200)
+    .range(from, to)
 
   if (!filters.showArchived) {
     query = query.is("archived_at", null)
@@ -54,8 +58,8 @@ export async function getCustomers(
     }
   }
 
-  const { data } = await query
-  return (data ?? []) as CustomerListRow[]
+  const { data, count } = await query
+  return { rows: (data ?? []) as CustomerListRow[], total: count ?? 0 }
 }
 
 export type CustomerDetail = {

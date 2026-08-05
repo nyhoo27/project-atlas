@@ -1,5 +1,6 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
+import { getRange, type Paginated } from "@/lib/utils/pagination"
 
 export type InteractionListRow = {
   id: string
@@ -21,13 +22,15 @@ export type InteractionListFilters = {
   itemId?: string
   createdBy?: string
   showArchived?: boolean
+  page?: number
 }
 
 export async function getInteractions(
   workspaceId: string,
   filters: InteractionListFilters
-): Promise<InteractionListRow[]> {
+): Promise<Paginated<InteractionListRow>> {
   const supabase = await createClient()
+  const { from, to } = getRange(filters.page ?? 1)
 
   let query = supabase
     .from("interactions")
@@ -35,11 +38,12 @@ export async function getInteractions(
       `id, summary, direction, interaction_at, next_follow_up_at, created_by, archived_at,
        type:settings_options(label),
        customer:customers(id, name),
-       item:items(id, name)`
+       item:items(id, name)`,
+      { count: "exact" }
     )
     .eq("workspace_id", workspaceId)
     .order("interaction_at", { ascending: false })
-    .limit(200)
+    .range(from, to)
 
   if (!filters.showArchived) {
     query = query.is("archived_at", null)
@@ -63,8 +67,11 @@ export async function getInteractions(
     }
   }
 
-  const { data } = await query
-  return (data ?? []) as InteractionListRow[]
+  const { data, count } = await query
+  return {
+    rows: (data ?? []) as InteractionListRow[],
+    total: count ?? 0,
+  }
 }
 
 /** Active customers/items for the interaction form dropdowns. */
