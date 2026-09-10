@@ -104,6 +104,11 @@ See [docs/architecture-decisions.md](docs/architecture-decisions.md) and the fol
 /types          Generated database types + shared app types
 ```
 
+## Live Demo
+
+[View the live Demo](https://project-atlas-five-sand.vercel.app/login)  
+Invite code: 'alpha-atlas'
+
 ## Documentation
 
 - [Product requirements](docs/product-requirements.md)
