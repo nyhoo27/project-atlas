@@ -65,25 +65,7 @@ Never hand-write `types/database.types.ts` — always regenerate it after a sche
 pnpm dlx supabase gen types typescript --project-id <your-project-ref> > types/database.types.ts
 ```
 
-### 5. Seed development data
-
-Auth users cannot be created with plain SQL. The seed script (`database/seed/seed.ts`) uses the Supabase Admin API (service role key, server-side only) to create three dev users, a workspace, and sample customers/items/interactions/tasks. See [docs/database-design.md](docs/database-design.md) for details. Run it with:
-
-```bash
-pnpm seed
-```
-
-Seeded dev logins (password `Password123!` for all):
-
-| Role | Email |
-| --- | --- |
-| Owner | `owner@slktrading.test` |
-| Manager | `manager@slktrading.test` |
-| Salesperson | `salesperson@slktrading.test` |
-
-You can also create a fresh workspace any time through the signup page.
-
-### 6. Run the dev server
+### 5. Run the dev server
 
 ```bash
 pnpm dev
